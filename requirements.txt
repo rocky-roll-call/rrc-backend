@@ -1,0 +1,5 @@
+django~=2.1
+django-cors-headers~=2.5
+djangorestframework~=3.9
+djangorestframework-jwt~=1.11
+dj-database-url~=0.5
