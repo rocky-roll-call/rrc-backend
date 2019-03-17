@@ -2,15 +2,16 @@
 Production Settings
 """
 
-import dj_database_url
+from decouple import config, Csv
+from dj_database_url import parse as db_url
 from rrc.settings.dev import *
 
-DATABASES = {"default": dj_database_url.config(default=os.getenv("DATABASE_URL"))}
+DATABASES = {"default": config("DATABASE_URL", cast=db_url)}
 
-DEBUG = bool(os.getenv("DJANGO_DEBUG", ""))
+DEBUG = config("SECRET_KEY")
 
-SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", SECRET_KEY)
+SECRET_KEY = config("SECRET_KEY")
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = config("ALLOWED_HOSTS", cast=Csv())
 
 JWT_AUTH["JWT_EXPIRATION_DELTA"] = datetime.timedelta(seconds=600)

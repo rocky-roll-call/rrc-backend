@@ -5,7 +5,7 @@ Serializers to convert API data to and from the database
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import User
 from rest_framework.serializers import ModelSerializer, PrimaryKeyRelatedField
-from .models import Profile
+from .models import Profile, UserPhoto
 
 
 class UserSerializer(ModelSerializer):
@@ -37,13 +37,13 @@ class ProfileSerializer(ModelSerializer):
     class Meta:
         model = Profile
         fields = (
-            "user.first_name",
             "id",
             "user",
             "name",
             "age",
             "full_name",
             "alt",
+            "image",
             "bio",
             "location",
             "external_url",
@@ -54,5 +54,17 @@ class ProfileSerializer(ModelSerializer):
             "searchable",
             "email_confirmed",
             "birth_date",
+            "photos",
         )
-        read_only_fields = ("id", "user", "name", "age")
+        read_only_fields = ("id", "user", "name", "age", "photos")
+
+
+class UserPhotoSerializer(ModelSerializer):
+    """
+    A serializer for the UserPhoto model
+    """
+
+    class Meta:
+        model = UserPhoto
+        fields = ("id", "profile", "image", "description", "created_date")
+        read_only_fields = ("id", "profile", "image", "created_date")

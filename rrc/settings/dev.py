@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 
 import os
 import datetime
+from decouple import config
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -32,15 +33,21 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    # Django
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    # Third-Party
+    "storages",
+    "sorl.thumbnail",
+    "django_cleanup.apps.CleanupConfig",
     "rest_framework",
     "rest_framework.authtoken",
     "corsheaders",
+    # Apps
     "users",
 ]
 
@@ -76,6 +83,19 @@ JWT_AUTH = {
 }
 
 CORS_ORIGIN_WHITELIST = ("localhost:8080", "localhost")
+
+# Enable S3 asset storage or use local /media folder
+
+if config("ENABLE_S3_ASSETS", default=False, cast=bool):
+    AWS_ACCESS_KEY_ID = config("AWS_ACCESS_KEY")
+    AWS_SECRET_ACCESS_KEY = config("AWS_SECRET_KEY")
+    AWS_STORAGE_BUCKET_NAME = config("AWS_ASSET_BUCKET")
+    AWS_S3_OBJECT_PARAMETERS = {"CacheControl": "max-age=86400"}
+    DEFAULT_FILE_STORAGE = "rrc.storage_backends.MediaStorage"
+    AWS_DEFAULT_ACL = None
+else:
+    MEDIA_URL = "/media/"
+    MEDIA_ROOT = os.path.join(BASE_DIR, "media/")
 
 ROOT_URLCONF = "rrc.urls"
 

@@ -9,4 +9,6 @@ urlpatterns = [
     path("<int:pk>", UserRetrieveUpdate.as_view()),
     path("profiles", ProfileList.as_view()),
     path("profiles/<int:pk>", ProfileRetrieveUpdate.as_view()),
+    path("profiles/<int:pk>/photos", UserPhotoListCreate.as_view()),
+    path("photos/<int:pk>", UserPhotoRetrieveUpdate.as_view()),
 ]
