@@ -25,6 +25,13 @@ class UserCreate(generics.CreateAPIView):
     permission_classes = (permissions.IsAdminUser,)
 
 
+class UserDestroy(generics.DestroyAPIView):
+    """View to delete an existing user"""
+
+    queryset = User.objects.all()
+    permission_classes = (permissions.IsAdminUser,)
+
+
 class UserRetrieveUpdate(generics.RetrieveUpdateAPIView):
     """Retrieve a user or update user information"""
 
@@ -73,7 +80,7 @@ class UserPhotoListCreate(generics.ListCreateAPIView):
         serializer.save(image=image, profile=profile)
 
 
-class UserPhotoRetrieveUpdate(generics.RetrieveUpdateDestroyAPIView):
+class UserPhotoRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
     """Retrieve, update, or delete a user photo"""
 
     queryset = UserPhoto.objects.all()

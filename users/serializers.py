@@ -15,12 +15,24 @@ class UserSerializer(ModelSerializer):
 
     class Meta:
         model = User
-        fields = ("id", "first_name", "last_name", "username", "profile")
-        read_only_fields = ("id", "profile")
+        fields = (
+            "id",
+            "first_name",
+            "last_name",
+            "username",
+            "email",
+            "password",
+            "last_login",
+            "date_joined",
+            "profile",
+        )
+        read_only_fields = ("id", "date_joined", "profile")
         extra_kwargs = {"password": {"write_only": True}}
 
     def create(self, validated_data):
         user = User.objects.create(
+            first_name=validated_data["first_name"],
+            last_name=validated_data["last_name"],
             email=validated_data["email"],
             username=validated_data["username"],
             password=make_password(validated_data["password"]),
