@@ -23,4 +23,5 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("auth", obtain_jwt_token),
     path("users/", include("users.urls")),
+    path("casts/", include("casts.urls")),
 ]

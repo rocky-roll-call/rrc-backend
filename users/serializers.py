@@ -4,13 +4,13 @@ Serializers to convert API data to and from the database
 
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import User
-from rest_framework.serializers import ModelSerializer, PrimaryKeyRelatedField
+from rest_framework.serializers import ModelSerializer
 from .models import Profile, UserPhoto
 
 
 class UserSerializer(ModelSerializer):
     """
-    A serializer for the default User model
+    A serializer for the default auth.User model
     """
 
     class Meta:
@@ -43,7 +43,7 @@ class UserSerializer(ModelSerializer):
 
 class ProfileSerializer(ModelSerializer):
     """
-    A serializer for the Profile model
+    A serializer for the users.Profile model
     """
 
     class Meta:
@@ -73,7 +73,7 @@ class ProfileSerializer(ModelSerializer):
 
 class UserPhotoSerializer(ModelSerializer):
     """
-    A serializer for the UserPhoto model
+    A serializer for the users.UserPhoto model
     """
 
     class Meta:
