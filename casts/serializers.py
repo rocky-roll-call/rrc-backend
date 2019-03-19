@@ -43,6 +43,17 @@ class CastSerializer(ModelSerializer):
         )
 
 
+class PageSectionSerializer(ModelSerializer):
+    """
+    A serializer for the casts.PageSection model
+    """
+
+    class Meta:
+        model = PageSection
+        fields = ("id", "cast", "title", "text", "order", "created_date")
+        read_only_fields = ("cast", "created_date")
+
+
 class CastPhotoSerializer(ModelSerializer):
     """
     A serializer for the casts.CastPhoto model
@@ -51,4 +62,4 @@ class CastPhotoSerializer(ModelSerializer):
     class Meta:
         model = CastPhoto
         fields = ("id", "cast", "image", "description", "created_date")
-        read_only_fields = ("id", "cast", "image", "created_date")
+        read_only_fields = ("cast", "image", "created_date")
