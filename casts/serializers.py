@@ -41,3 +41,14 @@ class CastSerializer(ModelSerializer):
             "future_events",
             "upcoming_events",
         )
+
+
+class CastPhotoSerializer(ModelSerializer):
+    """
+    A serializer for the casts.CastPhoto model
+    """
+
+    class Meta:
+        model = CastPhoto
+        fields = ("id", "cast", "image", "description", "created_date")
+        read_only_fields = ("id", "cast", "image", "created_date")
