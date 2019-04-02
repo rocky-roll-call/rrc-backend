@@ -4,9 +4,15 @@ User API Views
 
 from django.contrib.auth.models import User
 from rest_framework import generics, permissions
-from rest_framework.exceptions import ParseError
+from rest_framework.exceptions import ParseError, PermissionDenied
+from .permissions import IsOwner, IsUser
 from .models import Profile, UserPhoto
-from .serializers import ProfileSerializer, UserSerializer, UserPhotoSerializer
+from .serializers import (
+    ProfileSerializer,
+    PublicProfileSerializer,
+    UserSerializer,
+    UserPhotoSerializer,
+)
 
 
 class UserList(generics.ListAPIView):
@@ -17,6 +23,7 @@ class UserList(generics.ListAPIView):
     permission_classes = (permissions.IsAuthenticated,)
 
 
+# THIS WILL BE REPLACED. NO TESTS NEEDED
 class UserCreate(generics.CreateAPIView):
     """View to create a new user"""
 
@@ -25,19 +32,12 @@ class UserCreate(generics.CreateAPIView):
     permission_classes = (permissions.IsAdminUser,)
 
 
-class UserDestroy(generics.DestroyAPIView):
-    """View to delete an existing user"""
-
-    queryset = User.objects.all()
-    permission_classes = (permissions.IsAdminUser,)
-
-
-class UserRetrieveUpdate(generics.RetrieveUpdateAPIView):
+class UserRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
     """Retrieve a user or update user information"""
 
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (IsUser,)
 
     def perform_update(self, serializer, format=None):
         image = self.request.data.get("image")
@@ -59,8 +59,18 @@ class ProfileRetrieveUpdate(generics.RetrieveUpdateAPIView):
     """Retrieve a user profile or update its information"""
 
     queryset = Profile.objects.all()
-    serializer_class = ProfileSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+
+    def get_permissions(self):
+        if self.request.method == "GET":
+            self.permission_classes = (permissions.IsAuthenticated,)
+        else:
+            self.permission_classes = (IsOwner,)
+        return super().get_permissions()
+
+    def get_serializer_class(self):
+        if self.kwargs["pk"] == self.request.user.profile.id:
+            return ProfileSerializer
+        return PublicProfileSerializer
 
 
 class UserPhotoListCreate(generics.ListCreateAPIView):
@@ -74,6 +84,8 @@ class UserPhotoListCreate(generics.ListCreateAPIView):
 
     def perform_create(self, serializer, format=None):
         profile = Profile.objects.get(pk=self.kwargs["pk"])
+        if profile.user != self.request.user:
+            raise PermissionDenied()
         image = self.request.data.get("image")
         if image is None:
             raise ParseError("Could not find an 'image' in the POST data")
@@ -85,4 +97,10 @@ class UserPhotoRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
 
     queryset = UserPhoto.objects.all()
     serializer_class = UserPhotoSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+
+    def get_permissions(self):
+        if self.request.method == "GET":
+            self.permission_classes = (permissions.IsAuthenticated,)
+        else:
+            self.permission_classes = (IsOwner,)
+        return super().get_permissions()

@@ -35,7 +35,8 @@ class Cast(models.Model):
     description = models.TextField(verbose_name="About Us")
     logo = ImageField(blank=True, upload_to=cast_logo, verbose_name="Cast Logo")
     email = models.EmailField(max_length=128, verbose_name="Contact Email")
-    created_date = models.DateTimeField(default=timezone.now)
+    created_date = models.DateTimeField(default=timezone.now, editable=False)
+    modified_date = models.DateTimeField(default=timezone.now)
 
     managers = models.ManyToManyField("users.Profile", related_name="managed_casts")
     members = models.ManyToManyField("users.Profile", related_name="member_casts")
@@ -60,6 +61,7 @@ class Cast(models.Model):
         """
         # Always make the slug match the name
         self.slug = text.slugify(self.name)
+        self.modified_date = timezone.now()
         super(Cast, self).save(*args, **kwargs)
 
     def add_manager(self, profile: "users.Profile"):
@@ -193,7 +195,7 @@ class PageSection(models.Model):
     title = models.CharField(max_length=128, verbose_name="Section Title")
     text = models.TextField(verbose_name="Content")
     order = models.PositiveSmallIntegerField(default=1, verbose_name="Section Priority")
-    created_date = models.DateTimeField(default=timezone.now)
+    created_date = models.DateTimeField(default=timezone.now, editable=False)
 
     class Meta:
         ordering = ["order"]
@@ -210,7 +212,7 @@ class CastPhoto(models.Model):
     cast = models.ForeignKey(Cast, on_delete=models.CASCADE, related_name="photos")
     image = ImageField(upload_to=cast_photo)
     description = models.TextField(blank=True)
-    created_date = models.DateTimeField(default=timezone.now)
+    created_date = models.DateTimeField(default=timezone.now, editable=False)
 
     class Meta:
         ordering = ["-pk"]

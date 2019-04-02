@@ -17,8 +17,6 @@ class UserSerializer(ModelSerializer):
         model = User
         fields = (
             "id",
-            "first_name",
-            "last_name",
             "username",
             "email",
             "password",
@@ -31,8 +29,6 @@ class UserSerializer(ModelSerializer):
 
     def create(self, validated_data):
         user = User.objects.create(
-            first_name=validated_data["first_name"],
-            last_name=validated_data["last_name"],
             email=validated_data["email"],
             username=validated_data["username"],
             password=make_password(validated_data["password"]),
@@ -52,9 +48,9 @@ class ProfileSerializer(ModelSerializer):
             "id",
             "user",
             "name",
-            "age",
-            "full_name",
             "alt",
+            "display_name",
+            "age",
             "image",
             "bio",
             "location",
@@ -68,7 +64,29 @@ class ProfileSerializer(ModelSerializer):
             "birth_date",
             "photos",
         )
-        read_only_fields = ("id", "user", "name", "age", "photos")
+        read_only_fields = ("id", "user", "display_name", "age", "photos")
+
+
+class PublicProfileSerializer(ModelSerializer):
+    """
+    A serializer for a user's public profile
+    """
+
+    class Meta:
+        model = Profile
+        fields = (
+            "id",
+            "display_name",
+            "age",
+            "image",
+            "bio",
+            "location",
+            "external_url",
+            "facebook_url",
+            "twitter_user",
+            "instagram_user",
+            "photos",
+        )
 
 
 class UserPhotoSerializer(ModelSerializer):

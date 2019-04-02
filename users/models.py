@@ -47,7 +47,7 @@ class Profile(models.Model):
     image = ImageField(
         blank=True, upload_to=profile_image, verbose_name="Profile Photo"
     )
-    full_name = models.CharField(max_length=128, blank=True)
+    name = models.CharField(max_length=128, blank=True)
     alt = models.CharField(max_length=128, blank=True, verbose_name="Stage Name")
     bio = models.TextField(max_length=500, blank=True, verbose_name="Public Bio")
     location = models.CharField(max_length=64, blank=True)
@@ -72,22 +72,12 @@ class Profile(models.Model):
     email_confirmed = models.BooleanField(default=False)
     birth_date = models.DateField(null=True, blank=True)
 
-    def save_from_form(self, form: "SignUpForm"):
-        """
-        Assign profile attrs from new user form
-        """
-        self.birth_date = form.cleaned_data.get("birth_date")
-        self.full_name = " ".join(
-            [form.cleaned_data.get(key, "") for key in ("first_name", "last_name")]
-        )
-        self.alt = form.cleaned_data.get("alt")
-
     @property
-    def name(self) -> str:
+    def display_name(self) -> str:
         """
         Returns the desired display name for the user
         """
-        return self.alt or self.full_name
+        return self.alt or self.name
 
     @property
     def age(self) -> int:
@@ -123,7 +113,7 @@ class UserPhoto(models.Model):
     )
     image = ImageField(upload_to=user_photo)
     description = models.TextField(blank=True)
-    created_date = models.DateTimeField(default=timezone.now)
+    created_date = models.DateTimeField(default=timezone.now, editable=False)
 
     class Meta:
         ordering = ["-pk"]
