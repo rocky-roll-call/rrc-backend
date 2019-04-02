@@ -3,6 +3,7 @@ from django.test import TestCase
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
+from ..models import Profile
 
 
 class ProfileModelTestCase(TestCase):
@@ -24,7 +25,7 @@ class ProfileModelTestCase(TestCase):
         self.assertEqual(self.profile.display_name, alt)
 
 
-class ProfileAPITest(TestCase):
+class ProfileAPITestCase(TestCase):
     """
     Test the Profile API
     """
@@ -50,3 +51,20 @@ class ProfileAPITest(TestCase):
         response = self.client.get(reverse("profile", kwargs={"pk": self.p2.id}))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertNotIn("show_email", response.data)
+
+    def test_update(self):
+        """"Tests that a user can update their own profile but not others"""
+        self.assertEqual(self.p1.bio, "")
+        bio = "This is a test"
+        response = self.client.patch(
+            reverse("profile", kwargs={"pk": self.p1.id}), data={"bio": bio}
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["bio"], bio)
+        profile = Profile.objects.get(id=self.p1.id)
+        self.assertEqual(profile.bio, bio)
+        # Check for unauth when updating other profiles
+        response = self.client.patch(
+            reverse("profile", kwargs={"pk": self.p2.id}), data={"bio": bio}
+        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
