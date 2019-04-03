@@ -41,6 +41,11 @@ class ProfileAPITestCase(TestCase):
         self.client = APIClient()
         self.client.force_authenticate(user=user)
 
+    def test_list(self):
+        response = self.client.get(reverse("profiles"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2)
+
     def test_retrieve(self):
         """Tests user-based authentication on the requested object"""
         # User should have full access its own profile
