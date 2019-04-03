@@ -30,11 +30,11 @@ class Cast(models.Model):
     Basic Rocky Horror cast info
     """
 
-    name = models.CharField(max_length=128, unique=True, verbose_name="Cast Name")
+    name = models.CharField(max_length=128, unique=True)
     slug = models.SlugField(max_length=200, unique=True, blank=True)
-    description = models.TextField(verbose_name="About Us")
-    logo = ImageField(blank=True, upload_to=cast_logo, verbose_name="Cast Logo")
-    email = models.EmailField(max_length=128, verbose_name="Contact Email")
+    description = models.TextField()
+    logo = ImageField(blank=True, upload_to=cast_logo)
+    email = models.EmailField(max_length=128)
     created_date = models.DateTimeField(default=timezone.now, editable=False)
     modified_date = models.DateTimeField(default=timezone.now)
 
@@ -46,14 +46,10 @@ class Cast(models.Model):
     blocked = models.ManyToManyField("users.Profile", related_name="blocked_casts")
 
     # Social Links
-    external_url = models.URLField(blank=True, verbose_name="Existing Homepage")
-    facebook_url = models.URLField(blank=True, verbose_name="Facebook Group URL")
-    twitter_user = models.CharField(
-        max_length=15, blank=True, verbose_name="Twitter Username"
-    )
-    instagram_user = models.CharField(
-        max_length=30, blank=True, verbose_name="Instagram Username"
-    )
+    external_url = models.URLField(blank=True)
+    facebook_url = models.URLField(blank=True)
+    twitter_user = models.CharField(max_length=15, blank=True)
+    instagram_user = models.CharField(max_length=30, blank=True)
 
     def save(self, *args, **kwargs):
         """
@@ -82,11 +78,11 @@ class Cast(models.Model):
             raise ValueError(f"{profile} is not a manager or {self}")
         self.managers.remove(profile)  # pylint: disable=E1101
 
-    def is_manager(self, user: "auth.User") -> bool:
+    def is_manager(self, profile: "users.Profile") -> bool:
         """
-        Returns True if a user is a cast manager
+        Returns True if a profile is a cast manager
         """
-        return not user.is_anonymous and self.managers.filter(pk=user.profile.pk)
+        return self.managers.filter(pk=profile.pk)
 
     def add_member(self, profile: "users.Profile"):
         """
@@ -108,6 +104,12 @@ class Cast(models.Model):
             raise ValueError(f"{profile} is not a member or {self}")
         self.members.remove(profile)  # pylint: disable=E1101
 
+    def is_member(self, profile: "users.Profile") -> bool:
+        """
+        Returns True if a profile is a member of the cast
+        """
+        return self.members.filter(pk=profile.pk)
+
     def add_member_request(self, profile: "users.Profile"):
         """
         Adds a new profile to membership requests or raises an error
@@ -128,17 +130,11 @@ class Cast(models.Model):
             raise ValueError(f"{profile} has not requested to join {self}")
         self.member_requests.remove(profile)  # pylint: disable=E1101
 
-    def has_requested_membership(self, user: "auth.User") -> bool:
+    def has_requested_membership(self, profile: "users.Profile") -> bool:
         """
-        Returns True if a user has requested cast membership
+        Returns True if a profile has requested cast membership
         """
-        return not user.is_anonymous and self.member_requests.filter(pk=user.profile.pk)
-
-    def is_member(self, user: "auth.User") -> bool:
-        """
-        Returns True if a user is a member of the cast
-        """
-        return not user.is_anonymous and self.members.filter(pk=user.profile.pk)
+        return self.member_requests.filter(pk=profile.pk)
 
     def block_user(self, profile: "users.Profile"):
         """
@@ -160,11 +156,11 @@ class Cast(models.Model):
             raise ValueError(f"{profile} is not blocked from {self}")
         self.blocked.remove(profile)  # pylint: disable=E1101
 
-    def is_blocked(self, user: "auth.User") -> bool:
+    def is_blocked(self, profile: "users.Profile") -> bool:
         """
-        Returns True if a user is blocked from the cast
+        Returns True if a profile is blocked from the cast
         """
-        return not user.is_anonymous and self.blocked.filter(pk=user.profile.pk)
+        return self.blocked.filter(pk=profile.pk)
 
     @property
     def future_events(self) -> ["Event"]:
@@ -192,9 +188,9 @@ class PageSection(models.Model):
     cast = models.ForeignKey(
         Cast, on_delete=models.CASCADE, related_name="page_sections"
     )
-    title = models.CharField(max_length=128, verbose_name="Section Title")
-    text = models.TextField(verbose_name="Content")
-    order = models.PositiveSmallIntegerField(default=1, verbose_name="Section Priority")
+    title = models.CharField(max_length=128)
+    text = models.TextField()
+    order = models.PositiveSmallIntegerField(default=1)
     created_date = models.DateTimeField(default=timezone.now, editable=False)
 
     class Meta:

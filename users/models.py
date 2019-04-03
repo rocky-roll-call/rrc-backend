@@ -44,29 +44,21 @@ class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
 
     # Public Profile
-    image = ImageField(
-        blank=True, upload_to=profile_image, verbose_name="Profile Photo"
-    )
+    image = ImageField(blank=True, upload_to=profile_image)
     name = models.CharField(max_length=128, blank=True)
-    alt = models.CharField(max_length=128, blank=True, verbose_name="Stage Name")
-    bio = models.TextField(max_length=500, blank=True, verbose_name="Public Bio")
+    alt = models.CharField(max_length=128, blank=True)
+    bio = models.TextField(max_length=500, blank=True)
     location = models.CharField(max_length=64, blank=True)
 
     # Social Buttons
-    external_url = models.URLField(blank=True, verbose_name="Personal Website")
-    facebook_url = models.URLField(blank=True, verbose_name="Facebook Page")
-    twitter_user = models.CharField(
-        max_length=15, blank=True, verbose_name="Twitter Username"
-    )
-    instagram_user = models.CharField(
-        max_length=30, blank=True, verbose_name="Instagram Username"
-    )
+    external_url = models.URLField(blank=True)
+    facebook_url = models.URLField(blank=True)
+    twitter_user = models.CharField(max_length=15, blank=True)
+    instagram_user = models.CharField(max_length=30, blank=True)
 
     # Visibility Flags
-    show_email = models.BooleanField(
-        default=False, verbose_name="Show Email on Profile"
-    )
-    searchable = models.BooleanField(default=True, verbose_name="Searchable Profile")
+    show_email = models.BooleanField(default=False)
+    searchable = models.BooleanField(default=True)
 
     # Config
     email_confirmed = models.BooleanField(default=False)
