@@ -19,10 +19,23 @@ class IsUser(permissions.BasePermission):
 
 class IsOwner(IsUser):
     """
-    Custom permission to only allow owners of an object to edit it.
+    Permission class to only allow owners to edit an object
     """
 
     def has_object_permission(self, request, view, obj):
+        if hasattr(obj, "profile"):
+            return obj.profile.user == request.user
+        return obj.user == request.user
+
+
+class IsOwnerOrReadOnly(IsUser):
+    """
+    Permission class to only allow owners to edit an object or provide read access
+    """
+
+    def has_object_permission(self, request, view, obj):
+        if request.method in permissions.SAFE_METHODS:
+            return True
         if hasattr(obj, "profile"):
             return obj.profile.user == request.user
         return obj.user == request.user

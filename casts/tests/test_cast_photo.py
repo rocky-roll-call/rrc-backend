@@ -1,34 +1,24 @@
 from datetime import datetime
-from tempfile import NamedTemporaryFile
-from PIL import Image
 from django.contrib.auth.models import User
 from django.core.files.images import ImageFile
 from django.test import TestCase
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
-from ..models import UserPhoto
+from users.tests.test_user_photo import make_image
+from ..models import Cast, CastPhoto
 
 
-def make_image() -> NamedTemporaryFile:
-    image = Image.new("RGB", (100, 100))
-    tmp_file = NamedTemporaryFile(suffix=".jpg")
-    image.save(tmp_file)
-    return tmp_file
-
-
-class UserPhotoModelTestCase(TestCase):
+class CastPhotoModelTestCase(TestCase):
     """
-    Tests UserPhoto models directly
+    Tests CastPhoto models directly
     """
 
     def setUp(self):
-        self.profile = User.objects.create_user(
-            username="test", email="test@test.io", password="testing"
-        ).profile
+        self.cast = Cast.objects.create(name="Test Cast")
         tmpim = make_image()
         with open(tmpim.name, "rb") as data:
-            self.photo = UserPhoto.objects.create(profile=self.profile)
+            self.photo = CastPhoto.objects.create(cast=self.cast)
             self.photo.image = ImageFile(data, tmpim.name)
 
     def test_photo_details(self):
@@ -37,59 +27,69 @@ class UserPhotoModelTestCase(TestCase):
         self.assertTrue(self.photo.image.url.endswith(".jpg"))
 
 
-class UserPhotoAPITestCase(TestCase):
+class CastPhotoAPITestCase(TestCase):
     """
-    Test the UserPhoto API
+    Test the CastPhoto API
     """
 
     def setUp(self):
         user = User.objects.create_user(
             username="test", email="test@test.io", password="testing"
         )
-        self.profile1 = user.profile
-        self.profile2 = User.objects.create_user(
-            username="mctest", email="mctest@test.io", password="testing mctest"
-        ).profile
+        self.profile = user.profile
+        self.cast1 = Cast.objects.create(name="Test Cast")
+        self.cast2 = Cast.objects.create(name="Another Cast")
+        self.cast1.add_member(self.profile)
+        self.cast1.add_manager(self.profile)
         tmpim = make_image()
         with open(tmpim.name, "rb") as data:
-            self.photo1 = UserPhoto.objects.create(profile=self.profile1)
+            self.photo1 = CastPhoto.objects.create(cast=self.cast1)
             self.photo1.image = ImageFile(data, tmpim.name)
         tmpim = make_image()
         with open(tmpim.name, "rb") as data:
-            self.photo2 = UserPhoto.objects.create(profile=self.profile2)
+            self.photo2 = CastPhoto.objects.create(cast=self.cast1)
             self.photo2.image = ImageFile(data, tmpim.name)
+        tmpim = make_image()
+        with open(tmpim.name, "rb") as data:
+            self.photo3 = CastPhoto.objects.create(cast=self.cast2)
+            self.photo3.image = ImageFile(data, tmpim.name)
         self.client = APIClient()
         self.client.force_authenticate(user=user)
 
     def test_list(self):
-        """Tests calling user photo list"""
-        response = self.client.get(
-            reverse("profile-photos", kwargs={"pk": self.profile1.pk})
-        )
+        """Tests calling cast photo list"""
+        response = self.client.get(reverse("cast-photos", kwargs={"pk": self.cast1.pk}))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["id"], self.photo1.pk)
+        self.assertEqual(len(response.data), 2)
+        # Photos are reverse ordered
+        self.assertEqual(response.data[0]["id"], self.photo2.pk)
 
     def test_create(self):
-        """Tests creating a new user photo"""
+        """Tests creating a new cast photo"""
         tmpim = make_image()
         with open(tmpim.name, "rb") as data:
             response = self.client.post(
-                reverse("profile-photos", kwargs={"pk": self.profile1.pk}),
+                reverse("cast-photos", kwargs={"pk": self.cast1.pk}),
                 {"image": data, "description": "Test Image"},
                 format="multipart",
             )
             self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        photo = UserPhoto.objects.get(id=response.data["id"])
+        photo = CastPhoto.objects.get(id=response.data["id"])
         fname = tmpim.name.split("/")[-1]
         self.assertIn(fname, photo.image.path)
-        self.assertIn(self.profile1.user.username, photo.image.path)
+        self.assertIn(self.cast1.slug, photo.image.path)
+        # Prevent non-managers from adding photos
+        with open(tmpim.name, "rb") as data:
+            response = self.client.post(
+                reverse("cast-photos", kwargs={"pk": self.cast2.pk}),
+                {"image": data, "description": "Test Image"},
+                format="multipart",
+            )
+            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_retrieve(self):
         """Tests photo detail request"""
-        response = self.client.get(
-            reverse("profile-photo", kwargs={"pk": self.photo1.id})
-        )
+        response = self.client.get(reverse("cast-photo", kwargs={"pk": self.photo1.id}))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("image", response.data)
 
@@ -98,30 +98,30 @@ class UserPhotoAPITestCase(TestCase):
         self.assertEqual(self.photo1.description, "")
         desc = "This is a test"
         response = self.client.patch(
-            reverse("profile-photo", kwargs={"pk": self.photo1.id}),
+            reverse("cast-photo", kwargs={"pk": self.photo1.id}),
             data={"description": desc},
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["description"], desc)
-        photo = UserPhoto.objects.get(id=self.photo1.id)
+        photo = CastPhoto.objects.get(id=self.photo1.id)
         self.assertEqual(photo.description, desc)
-        # Prohibit updates to other users' photos
+        # Prohibit updates to other casts' photos
         response = self.client.patch(
-            reverse("profile-photo", kwargs={"pk": self.photo2.id})
+            reverse("cast-photo", kwargs={"pk": self.photo3.id})
         )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_delete(self):
-        """Tests that a user can delete their own photos but not others"""
+        """Tests that a manager can delete their cast photos but not others"""
         response = self.client.delete(
-            reverse("profile-photo", kwargs={"pk": self.photo2.id})
+            reverse("cast-photo", kwargs={"pk": self.photo3.id})
         )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         response = self.client.delete(
-            reverse("profile-photo", kwargs={"pk": self.photo1.id})
+            reverse("cast-photo", kwargs={"pk": self.photo1.id})
         )
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         response = self.client.delete(
-            reverse("profile-photo", kwargs={"pk": self.photo1.id})
+            reverse("cast-photo", kwargs={"pk": self.photo1.id})
         )
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)

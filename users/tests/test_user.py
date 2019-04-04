@@ -32,14 +32,14 @@ class UserAPITestCase(TestCase):
     """
 
     def setUp(self):
-        self.u1 = User.objects.create_user(
+        self.user1 = User.objects.create_user(
             username="test", email="test@test.io", password="testing"
         )
-        self.u2 = User.objects.create_user(
+        self.user2 = User.objects.create_user(
             username="mctest", email="mctest@test.io", password="testing mctest"
         )
         self.client = APIClient()
-        self.client.force_authenticate(user=self.u1)
+        self.client.force_authenticate(user=self.user1)
 
     def test_list(self):
         response = self.client.get(reverse("users"))
@@ -49,34 +49,34 @@ class UserAPITestCase(TestCase):
     def test_retrieve_auth(self):
         """Tests user-based authentication on the requested object"""
         # User should be able to access its own instance
-        response = self.client.get(reverse("user", kwargs={"pk": self.u1.id}))
+        response = self.client.get(reverse("user", kwargs={"pk": self.user1.id}))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # But not those of others
-        response = self.client.get(reverse("user", kwargs={"pk": self.u2.id}))
+        response = self.client.get(reverse("user", kwargs={"pk": self.user2.id}))
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_update(self):
         """"Tests that a user can update their own details but not others"""
         old_email, new_email = "test@test.io", "notatest@test.io"
-        self.assertEqual(self.u1.email, old_email)
+        self.assertEqual(self.user1.email, old_email)
         response = self.client.patch(
-            reverse("user", kwargs={"pk": self.u1.id}), data={"email": new_email}
+            reverse("user", kwargs={"pk": self.user1.id}), data={"email": new_email}
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["email"], new_email)
-        user = User.objects.get(id=self.u1.id)
+        user = User.objects.get(id=self.user1.id)
         self.assertEqual(user.email, new_email)
         # Check for unauth when updating other users
         response = self.client.patch(
-            reverse("user", kwargs={"pk": self.u2.id}), data={"email": new_email}
+            reverse("user", kwargs={"pk": self.user2.id}), data={"email": new_email}
         )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_delete(self):
         """Tests that a user can delete their own model but not others"""
-        response = self.client.delete(reverse("user", kwargs={"pk": self.u2.id}))
+        response = self.client.delete(reverse("user", kwargs={"pk": self.user2.id}))
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        response = self.client.delete(reverse("user", kwargs={"pk": self.u1.id}))
+        response = self.client.delete(reverse("user", kwargs={"pk": self.user1.id}))
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        response = self.client.delete(reverse("user", kwargs={"pk": self.u1.id}))
+        response = self.client.delete(reverse("user", kwargs={"pk": self.user1.id}))
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)

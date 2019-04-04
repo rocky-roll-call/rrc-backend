@@ -34,14 +34,15 @@ class ProfileAPITestCase(TestCase):
         user = User.objects.create_user(
             username="test", email="test@test.io", password="testing"
         )
-        self.p1 = user.profile
-        self.p2 = User.objects.create_user(
+        self.profile1 = user.profile
+        self.profile2 = User.objects.create_user(
             username="mctest", email="mctest@test.io", password="testing mctest"
         ).profile
         self.client = APIClient()
         self.client.force_authenticate(user=user)
 
     def test_list(self):
+        """Tests calling profile list"""
         response = self.client.get(reverse("profiles"))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 2)
@@ -49,27 +50,27 @@ class ProfileAPITestCase(TestCase):
     def test_retrieve(self):
         """Tests user-based authentication on the requested object"""
         # User should have full access its own profile
-        response = self.client.get(reverse("profile", kwargs={"pk": self.p1.id}))
+        response = self.client.get(reverse("profile", kwargs={"pk": self.profile1.id}))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("show_email", response.data)
         # But a limitted view of others
-        response = self.client.get(reverse("profile", kwargs={"pk": self.p2.id}))
+        response = self.client.get(reverse("profile", kwargs={"pk": self.profile2.id}))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertNotIn("show_email", response.data)
 
     def test_update(self):
         """"Tests that a user can update their own profile but not others"""
-        self.assertEqual(self.p1.bio, "")
+        self.assertEqual(self.profile1.bio, "")
         bio = "This is a test"
         response = self.client.patch(
-            reverse("profile", kwargs={"pk": self.p1.id}), data={"bio": bio}
+            reverse("profile", kwargs={"pk": self.profile1.id}), data={"bio": bio}
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["bio"], bio)
-        profile = Profile.objects.get(id=self.p1.id)
+        profile = Profile.objects.get(id=self.profile1.id)
         self.assertEqual(profile.bio, bio)
         # Check for unauth when updating other profiles
         response = self.client.patch(
-            reverse("profile", kwargs={"pk": self.p2.id}), data={"bio": bio}
+            reverse("profile", kwargs={"pk": self.profile2.id}), data={"bio": bio}
         )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)

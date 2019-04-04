@@ -5,7 +5,7 @@ User API Views
 from django.contrib.auth.models import User
 from rest_framework import generics, permissions
 from rest_framework.exceptions import ParseError, PermissionDenied
-from .permissions import IsOwner, IsUser
+from .permissions import IsOwner, IsOwnerOrReadOnly, IsUser
 from .models import Profile, UserPhoto
 from .serializers import (
     ProfileSerializer,
@@ -59,13 +59,7 @@ class ProfileRetrieveUpdate(generics.RetrieveUpdateAPIView):
     """Retrieve a user profile or update its information"""
 
     queryset = Profile.objects.all()
-
-    def get_permissions(self):
-        if self.request.method == "GET":
-            self.permission_classes = (permissions.IsAuthenticated,)
-        else:
-            self.permission_classes = (IsOwner,)
-        return super().get_permissions()
+    permission_classes = (IsOwnerOrReadOnly,)
 
     def get_serializer_class(self):
         if self.kwargs["pk"] == self.request.user.profile.id:
@@ -77,13 +71,14 @@ class UserPhotoListCreate(generics.ListCreateAPIView):
     """List all user photos or create a new one"""
 
     serializer_class = UserPhotoSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (IsOwnerOrReadOnly,)
 
     def get_queryset(self):
         return UserPhoto.objects.filter(profile=self.kwargs["pk"])
 
     def perform_create(self, serializer, format=None):
         profile = Profile.objects.get(pk=self.kwargs["pk"])
+        self.check_object_permissions(self.request, profile)
         if profile.user != self.request.user:
             raise PermissionDenied()
         image = self.request.data.get("image")
@@ -97,10 +92,4 @@ class UserPhotoRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
 
     queryset = UserPhoto.objects.all()
     serializer_class = UserPhotoSerializer
-
-    def get_permissions(self):
-        if self.request.method == "GET":
-            self.permission_classes = (permissions.IsAuthenticated,)
-        else:
-            self.permission_classes = (IsOwner,)
-        return super().get_permissions()
+    permission_classes = (IsOwnerOrReadOnly,)
