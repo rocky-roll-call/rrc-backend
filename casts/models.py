@@ -82,7 +82,7 @@ class Cast(models.Model):
         """
         Returns True if a profile is a cast manager
         """
-        return self.managers.filter(pk=profile.pk)
+        return bool(self.managers.filter(pk=profile.pk))
 
     def add_member(self, profile: "users.Profile"):
         """
@@ -108,7 +108,7 @@ class Cast(models.Model):
         """
         Returns True if a profile is a member of the cast
         """
-        return self.members.filter(pk=profile.pk)
+        return bool(self.members.filter(pk=profile.pk))
 
     def add_member_request(self, profile: "users.Profile"):
         """
@@ -134,7 +134,7 @@ class Cast(models.Model):
         """
         Returns True if a profile has requested cast membership
         """
-        return self.member_requests.filter(pk=profile.pk)
+        return bool(self.member_requests.filter(pk=profile.pk))
 
     def block_user(self, profile: "users.Profile"):
         """
@@ -160,7 +160,7 @@ class Cast(models.Model):
         """
         Returns True if a profile is blocked from the cast
         """
-        return self.blocked.filter(pk=profile.pk)
+        return bool(self.blocked.filter(pk=profile.pk))
 
     @property
     def future_events(self) -> ["Event"]:

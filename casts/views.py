@@ -16,6 +16,11 @@ class CastListCreate(generics.ListCreateAPIView):
     serializer_class = CastSerializer
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
 
+    def perform_create(self, serializer, format=None):
+        cast = serializer.save()
+        cast.add_member(self.request.user.profile)
+        cast.add_manager(self.request.user.profile)
+
 
 class CastRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
     """Retrieve, update, or delete a cast"""
@@ -23,6 +28,11 @@ class CastRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
     queryset = Cast.objects.all()
     serializer_class = CastSerializer
     permission_classes = (IsManagerOrReadOnly,)
+
+    def perform_destroy(self, instance: Cast):
+        if instance.managers.count() > 1:
+            raise ParseError("User must be the sole manager to delete")
+        instance.delete()
 
 
 class PageSectionListCreate(generics.ListCreateAPIView):
