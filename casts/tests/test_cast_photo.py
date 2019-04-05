@@ -1,10 +1,16 @@
+# stdlib
 from datetime import datetime
+from shutil import rmtree
+# django
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.files.images import ImageFile
 from django.test import TestCase
 from django.urls import reverse
+# library
 from rest_framework import status
 from rest_framework.test import APIClient
+# app
 from users.tests.test_user_photo import make_image
 from ..models import Cast, CastPhoto
 
@@ -15,11 +21,15 @@ class CastPhotoModelTestCase(TestCase):
     """
 
     def setUp(self):
+        rmtree(settings.MEDIA_ROOT, ignore_errors=True)
         self.cast = Cast.objects.create(name="Test Cast")
         tmpim = make_image()
         with open(tmpim.name, "rb") as data:
             self.photo = CastPhoto.objects.create(cast=self.cast)
             self.photo.image = ImageFile(data, tmpim.name)
+
+    def tearDown(self):
+        rmtree(settings.MEDIA_ROOT, ignore_errors=True)
 
     def test_photo_details(self):
         """Tests image field return types"""
@@ -33,6 +43,7 @@ class CastPhotoAPITestCase(TestCase):
     """
 
     def setUp(self):
+        rmtree(settings.MEDIA_ROOT, ignore_errors=True)
         user = User.objects.create_user(
             username="test", email="test@test.io", password="testing"
         )
@@ -55,6 +66,9 @@ class CastPhotoAPITestCase(TestCase):
             self.photo3.image = ImageFile(data, tmpim.name)
         self.client = APIClient()
         self.client.force_authenticate(user=user)
+
+    def tearDown(self):
+        rmtree(settings.MEDIA_ROOT, ignore_errors=True)
 
     def test_list(self):
         """Tests calling cast photo list"""

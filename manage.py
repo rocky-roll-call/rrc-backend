@@ -3,7 +3,8 @@ import os
 import sys
 
 if __name__ == "__main__":
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "rrc.settings.dev")
+    settings = 'rrc.settings.test' if 'test' in sys.argv else "rrc.settings.dev"
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", settings)
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:

@@ -1,12 +1,18 @@
+# stdlib
 from datetime import datetime
+from shutil import rmtree
 from tempfile import NamedTemporaryFile
-from PIL import Image
+# django
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.files.images import ImageFile
 from django.test import TestCase
 from django.urls import reverse
+# library
 from rest_framework import status
 from rest_framework.test import APIClient
+from PIL import Image
+# app
 from ..models import UserPhoto
 
 
@@ -23,6 +29,7 @@ class UserPhotoModelTestCase(TestCase):
     """
 
     def setUp(self):
+        rmtree(settings.MEDIA_ROOT, ignore_errors=True)
         self.profile = User.objects.create_user(
             username="test", email="test@test.io", password="testing"
         ).profile
@@ -30,6 +37,9 @@ class UserPhotoModelTestCase(TestCase):
         with open(tmpim.name, "rb") as data:
             self.photo = UserPhoto.objects.create(profile=self.profile)
             self.photo.image = ImageFile(data, tmpim.name)
+
+    def tearDown(self):
+        rmtree(settings.MEDIA_ROOT, ignore_errors=True)
 
     def test_photo_details(self):
         """Tests image field return types"""
@@ -43,6 +53,7 @@ class UserPhotoAPITestCase(TestCase):
     """
 
     def setUp(self):
+        rmtree(settings.MEDIA_ROOT, ignore_errors=True)
         user = User.objects.create_user(
             username="test", email="test@test.io", password="testing"
         )
@@ -60,6 +71,9 @@ class UserPhotoAPITestCase(TestCase):
             self.photo2.image = ImageFile(data, tmpim.name)
         self.client = APIClient()
         self.client.force_authenticate(user=user)
+
+    def tearDown(self):
+        rmtree(settings.MEDIA_ROOT, ignore_errors=True)
 
     def test_list(self):
         """Tests calling user photo list"""
