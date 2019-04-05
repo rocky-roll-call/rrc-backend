@@ -53,6 +53,36 @@ class CastModelTestCase(TestCase):
             self.cast.add_member, self.cast.is_member, self.cast.remove_member
         )
 
+    def test_member_add_removes_request(self):
+        """Tests adding a member removes an existing request"""
+        self.cast.add_member_request(self.profile)
+        self.assertTrue(self.cast.has_requested_membership(self.profile))
+        self.assertFalse(self.cast.is_member(self.profile))
+        self.cast.add_member(self.profile)
+        self.assertTrue(self.cast.is_member(self.profile))
+        self.assertFalse(self.cast.has_requested_membership(self.profile))
+
+    def test_member_add_if_blocked(self):
+        """Can't add member if blocked"""
+        self.cast.block_user(self.profile)
+        self.assertTrue(self.cast.is_blocked(self.profile))
+        with self.assertRaises(ValueError):
+            self.cast.add_member(self.profile)
+        self.assertFalse(self.cast.is_member(self.profile))
+        self.assertTrue(self.cast.is_blocked(self.profile))
+        self.cast.unblock_user(self.profile)
+
+    def test_member_remove_if_manager(self):
+        """Cannot remove member if a manager"""
+        self.cast.add_member(self.profile)
+        self.cast.add_manager(self.profile)
+        self.assertTrue(self.cast.is_manager(self.profile))
+        with self.assertRaises(ValueError):
+            self.cast.remove_member(self.profile)
+        self.assertTrue(self.cast.is_manager(self.profile))
+        self.cast.remove_manager(self.profile)
+        self.cast.remove_member(self.profile)
+
     def test_requests(self):
         """Tests membership request lifecycle"""
         self._add_check_remove(
@@ -61,11 +91,49 @@ class CastModelTestCase(TestCase):
             self.cast.remove_member_request,
         )
 
+    def test_request_if_member(self):
+        """Can't request if already a member"""
+        self.cast.add_member(self.profile)
+        self.assertTrue(self.cast.is_member(self.profile))
+        with self.assertRaises(ValueError):
+            self.cast.add_member_request(self.profile)
+        self.assertFalse(self.cast.has_requested_membership(self.profile))
+        self.cast.remove_member(self.profile)
+
+    def test_request_if_blocked(self):
+        """Can't request if blocked"""
+        self.cast.block_user(self.profile)
+        self.assertFalse(self.cast.has_requested_membership(self.profile))
+        with self.assertRaises(ValueError):
+            self.cast.add_member_request(self.profile)
+        self.assertFalse(self.cast.has_requested_membership(self.profile))
+        self.cast.unblock_user(self.profile)
+
     def test_blocked(self):
         """Tests blocked user lifecycle"""
         self._add_check_remove(
             self.cast.block_user, self.cast.is_blocked, self.cast.unblock_user
         )
+
+    def test_block_if_manager(self):
+        """Can't block a manager"""
+        self.cast.add_member(self.profile)
+        self.cast.add_manager(self.profile)
+        self.assertTrue(self.cast.is_manager(self.profile))
+        with self.assertRaises(ValueError):
+            self.cast.block_user(self.profile)
+        self.assertFalse(self.cast.is_blocked(self.profile))
+        self.assertTrue(self.cast.is_manager(self.profile))
+        self.cast.remove_manager(self.profile)
+        self.cast.remove_member(self.profile)
+
+    def test_block_removes_members(self):
+        """Blocking an existing member should remove them"""
+        self.cast.add_member(self.profile)
+        self.assertTrue(self.cast.is_member(self.profile))
+        self.cast.block_user(self.profile)
+        self.assertTrue(self.cast.is_blocked(self.profile))
+        self.assertFalse(self.cast.is_member(self.profile))
 
 
 class CastAPITestCase(TestCase):
@@ -149,3 +217,82 @@ class CastAPITestCase(TestCase):
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         response = self.client.delete(reverse("cast", kwargs={"pk": self.cast1.id}))
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+
+class CastListAPITestCase(TestCase):
+    """
+    Test the Cast API
+    """
+
+    def setUp(self):
+        user = User.objects.create_user(
+            username="test", email="test@test.io", password="testing"
+        )
+        self.profile1 = user.profile
+        self.profile2 = User.objects.create_user(
+            username="mctest", email="mctest@test.io", password="testing mctest"
+        ).profile
+        self.cast1 = Cast.objects.create(name="Test Cast")
+        self.cast2 = Cast.objects.create(name="Another Cast")
+        self.cast1.add_member(self.profile1)
+        self.cast1.add_manager(self.profile1)
+        self.client = APIClient()
+        self.client.force_authenticate(user=user)
+
+    def _list_add_check_remove(self, url_name: str, fcheck: str):
+        """Tests list endpoint's add, check, remove, and dne events"""
+        url = reverse(url_name, kwargs={"pk": self.cast1.pk, "pid": self.profile2.pk})
+        # Cannot remove non-added profile
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(getattr(self.cast1, fcheck)(self.profile2))
+        # Add profile
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(getattr(self.cast1, fcheck)(self.profile2))
+        # Cannot re-add profile
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        # Remove profile
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(getattr(self.cast1, fcheck)(self.profile2))
+        # Bad cast
+        response = self.client.delete(
+            reverse(url_name, kwargs={"pk": 0, "pid": self.profile2.pk})
+        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        # Bad profile
+        response = self.client.delete(
+            reverse(url_name, kwargs={"pk": self.cast1.pk, "pid": 0})
+        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        # Not allowed for other casts
+        response = self.client.post(
+            reverse(url_name, kwargs={"pk": self.cast2.pk, "pid": self.profile2.pk})
+        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_member_list(self):
+        """Tests member add/remove endpoint"""
+        self._list_add_check_remove("cast-member", "is_member")
+
+    def test_manager_list(self):
+        """Tests member add/remove endpoint"""
+        # Cannot add a non-member
+        response = self.client.post(
+            reverse(
+                "cast-manager", kwargs={"pk": self.cast1.pk, "pid": self.profile2.pk}
+            )
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.cast1.add_member(self.profile2)
+        self._list_add_check_remove("cast-manager", "is_manager")
+
+    def test_request_list(self):
+        """"""
+        self._list_add_check_remove("cast-member-request", "has_requested_membership")
+
+    def test_blocked_list(self):
+        """"""
+        self._list_add_check_remove("cast-blocked", "is_blocked")

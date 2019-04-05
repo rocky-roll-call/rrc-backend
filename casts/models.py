@@ -64,9 +64,9 @@ class Cast(models.Model):
         """
         Adds a new profile to managers or raises an error
         """
-        if self.managers.filter(pk=profile.pk):
+        if self.is_manager(profile):
             raise ValueError(f"{profile} is already a manager of {self}")
-        if not self.members.filter(pk=profile.pk):
+        if not self.is_member(profile):
             raise ValueError(f"{profile} is not a member of {self}")
         self.managers.add(profile)
 
@@ -74,7 +74,7 @@ class Cast(models.Model):
         """
         Remove a profile from managers
         """
-        if not self.managers.filter(pk=profile.pk):
+        if not self.is_manager(profile):
             raise ValueError(f"{profile} is not a manager or {self}")
         self.managers.remove(profile)  # pylint: disable=E1101
 
@@ -87,20 +87,26 @@ class Cast(models.Model):
     def add_member(self, profile: "users.Profile"):
         """
         Adds a new profile to members or raises an error
+
+        Removes membership request if applicable
         """
-        if self.members.filter(pk=profile.pk):
+        if self.is_member(profile):
             raise ValueError(f"{profile} is already a member of {self}")
+        if self.is_blocked(profile):
+            raise ValueError(f"{profile} is blocked from joining {self}")
         self.members.add(profile)
+        if self.has_requested_membership(profile):
+            self.remove_member_request(profile)
 
     def remove_member(self, profile: "users.Profile"):
         """
         Remove a profile from members
         """
-        if self.managers.filter(pk=profile.pk):
+        if self.is_manager(profile):
             raise ValueError(
                 f"{profile} cannot be removed because they are a manager of {self}"
             )
-        if not self.members.filter(pk=profile.pk):
+        if not self.is_member(profile):
             raise ValueError(f"{profile} is not a member or {self}")
         self.members.remove(profile)  # pylint: disable=E1101
 
@@ -114,11 +120,11 @@ class Cast(models.Model):
         """
         Adds a new profile to membership requests or raises an error
         """
-        if self.members.filter(pk=profile.pk):
+        if self.is_member(profile):
             raise ValueError(f"{profile} is already a member of {self}")
-        if self.member_requests.filter(pk=profile.pk):
+        if self.has_requested_membership(profile):
             raise ValueError(f"{profile} has already requested to join {self}")
-        if self.blocked.filter(pk=profile.pk):
+        if self.is_blocked(profile):
             raise ValueError(f"{profile} is blocked from joining {self}")
         self.member_requests.add(profile)
 
@@ -126,7 +132,7 @@ class Cast(models.Model):
         """
         Removes a profile from membership requests
         """
-        if not self.member_requests.filter(pk=profile.pk):
+        if not self.has_requested_membership(profile):
             raise ValueError(f"{profile} has not requested to join {self}")
         self.member_requests.remove(profile)  # pylint: disable=E1101
 
@@ -139,20 +145,24 @@ class Cast(models.Model):
     def block_user(self, profile: "users.Profile"):
         """
         Adds a new profile to blocked users or raises an error
+
+        Removes membership if applicable
         """
-        if self.managers.filter(pk=profile.pk):
+        if self.is_manager(profile):
             raise ValueError(
                 f"{profile} cannot be blocked because they are a manager of {self}"
             )
-        if self.blocked.filter(pk=profile.pk):
+        if self.is_blocked(profile):
             raise ValueError(f"{profile} is already blocked from {self}")
+        if self.is_member(profile):
+            self.remove_member(profile)
         self.blocked.add(profile)
 
     def unblock_user(self, profile: "users.Profile"):
         """
         Remove a profile from blocked users
         """
-        if not self.blocked.filter(pk=profile.pk):
+        if not self.is_blocked(profile):
             raise ValueError(f"{profile} is not blocked from {self}")
         self.blocked.remove(profile)  # pylint: disable=E1101
 

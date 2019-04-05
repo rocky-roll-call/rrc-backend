@@ -2,10 +2,13 @@
 Cast API Views
 """
 
-from rest_framework import generics, permissions
+from django.shortcuts import get_object_or_404
+from rest_framework import generics, permissions, views
 from rest_framework.exceptions import ParseError
+from rest_framework.response import Response
+from users.models import Profile
 from .models import Cast, CastPhoto, PageSection
-from .permissions import IsManagerOrReadOnly
+from .permissions import IsManager, IsManagerOrReadOnly
 from .serializers import CastSerializer, CastPhotoSerializer, PageSectionSerializer
 
 
@@ -33,6 +36,65 @@ class CastRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
         if instance.managers.count() > 1:
             raise ParseError("User must be the sole manager to delete")
         instance.delete()
+
+
+class ListManageView(views.APIView):
+    """Add and remove objects from a list"""
+
+    source: "Primary Model"
+    member: "List Member Model"
+    add_method: str
+    remove_method: str
+
+    permission_classes = (IsManager,)
+
+    def _run(self, method: str, request, pk: int, pid: int, format=None) -> Response:
+        source = get_object_or_404(self.source, pk=pk)
+        self.check_object_permissions(request, source)
+        member = get_object_or_404(self.member, pk=pid)
+        try:
+            getattr(source, method)(member)
+            return Response()
+        except ValueError as exc:
+            raise ParseError(exc)
+
+    def post(self, *args, **kwargs) -> Response:
+        return self._run(self.add_method, *args, **kwargs)
+
+    def delete(self, *args, **kwargs) -> Response:
+        return self._run(self.remove_method, *args, **kwargs)
+
+
+class CastMemberManager(ListManageView):
+
+    source = Cast
+    member = Profile
+    add_method = "add_member"
+    remove_method = "remove_member"
+
+
+class CastManagerManager(ListManageView):
+
+    source = Cast
+    member = Profile
+    add_method = "add_manager"
+    remove_method = "remove_manager"
+
+
+class CastMemberRequestManager(ListManageView):
+
+    source = Cast
+    member = Profile
+    add_method = "add_member_request"
+    remove_method = "remove_member_request"
+
+
+class CastBlockedManager(ListManageView):
+
+    source = Cast
+    member = Profile
+    add_method = "block_user"
+    remove_method = "unblock_user"
 
 
 class PageSectionListCreate(generics.ListCreateAPIView):
