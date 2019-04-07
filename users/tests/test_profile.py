@@ -1,9 +1,19 @@
+# stdlib
+from shutil import rmtree
+
+# django
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
+
+# library
 from rest_framework import status
 from rest_framework.test import APIClient
+
+# app
 from ..models import Profile
+from .test_user_photo import make_image
 
 
 class ProfileModelTestCase(TestCase):
@@ -31,6 +41,7 @@ class ProfileAPITestCase(TestCase):
     """
 
     def setUp(self):
+        rmtree(settings.MEDIA_ROOT, ignore_errors=True)
         user = User.objects.create_user(
             username="test", email="test@test.io", password="testing"
         )
@@ -40,6 +51,9 @@ class ProfileAPITestCase(TestCase):
         ).profile
         self.client = APIClient()
         self.client.force_authenticate(user=user)
+
+    def tearDown(self):
+        rmtree(settings.MEDIA_ROOT, ignore_errors=True)
 
     def test_list(self):
         """Tests calling profile list"""
@@ -74,3 +88,21 @@ class ProfileAPITestCase(TestCase):
             reverse("profile", kwargs={"pk": self.profile2.id}), data={"bio": bio}
         )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_update_image(self):
+        """Tests updating a profile image"""
+        self.assertEqual(self.profile1.image, "")
+        tmpim = make_image()
+        with open(tmpim.name, "rb") as data:
+            response = self.client.patch(
+                reverse("profile", kwargs={"pk": self.profile1.pk}),
+                {"image": data},
+                format="multipart",
+            )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data["image"].endswith(".jpg"))
+        self.assertIn("profile_image", response.data["image"])
+        profile = Profile.objects.get(pk=self.profile1.pk)
+        self.assertTrue(profile.image.path.endswith(".jpg"))
+        self.assertIn("profile_image", profile.image.path)
+        self.assertIn(self.profile1.user.username, profile.image.path)

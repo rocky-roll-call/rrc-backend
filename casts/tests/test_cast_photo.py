@@ -1,15 +1,18 @@
 # stdlib
 from datetime import datetime
 from shutil import rmtree
+
 # django
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.files.images import ImageFile
 from django.test import TestCase
 from django.urls import reverse
+
 # library
 from rest_framework import status
 from rest_framework.test import APIClient
+
 # app
 from users.tests.test_user_photo import make_image
 from ..models import Cast, CastPhoto
@@ -87,7 +90,7 @@ class CastPhotoAPITestCase(TestCase):
                 {"image": data, "description": "Test Image"},
                 format="multipart",
             )
-            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         photo = CastPhoto.objects.get(id=response.data["id"])
         fname = tmpim.name.split("/")[-1]
         self.assertIn(fname, photo.image.path)
@@ -99,7 +102,7 @@ class CastPhotoAPITestCase(TestCase):
                 {"image": data, "description": "Test Image"},
                 format="multipart",
             )
-            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_retrieve(self):
         """Tests photo detail request"""

@@ -2,16 +2,19 @@
 from datetime import datetime
 from shutil import rmtree
 from tempfile import NamedTemporaryFile
+
 # django
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.files.images import ImageFile
 from django.test import TestCase
 from django.urls import reverse
+
 # library
 from rest_framework import status
 from rest_framework.test import APIClient
 from PIL import Image
+
 # app
 from ..models import UserPhoto
 
@@ -93,7 +96,7 @@ class UserPhotoAPITestCase(TestCase):
                 {"image": data, "description": "Test Image"},
                 format="multipart",
             )
-            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         photo = UserPhoto.objects.get(id=response.data["id"])
         fname = tmpim.name.split("/")[-1]
         self.assertIn(fname, photo.image.path)

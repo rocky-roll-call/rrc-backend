@@ -1,9 +1,19 @@
+# stdlib
 from datetime import datetime
+from shutil import rmtree
+
+# django
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
+
+# library
 from rest_framework import status
 from rest_framework.test import APIClient
+
+# app
+from users.tests.test_user_photo import make_image
 from ..models import Cast
 
 
@@ -142,6 +152,7 @@ class CastAPITestCase(TestCase):
     """
 
     def setUp(self):
+        rmtree(settings.MEDIA_ROOT, ignore_errors=True)
         user = User.objects.create_user(
             username="test", email="test@test.io", password="testing"
         )
@@ -152,6 +163,9 @@ class CastAPITestCase(TestCase):
         self.cast1.add_manager(self.profile)
         self.client = APIClient()
         self.client.force_authenticate(user=user)
+
+    def tearDown(self):
+        rmtree(settings.MEDIA_ROOT, ignore_errors=True)
 
     def test_list(self):
         """Tests calling cast list"""
@@ -199,6 +213,24 @@ class CastAPITestCase(TestCase):
         # Prohibit updates to other casts
         response = self.client.patch(reverse("cast", kwargs={"pk": self.cast2.id}))
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_update_image(self):
+        """Tests updating a cast logo"""
+        self.assertEqual(self.cast1.logo, "")
+        tmpim = make_image()
+        with open(tmpim.name, "rb") as data:
+            response = self.client.patch(
+                reverse("cast", kwargs={"pk": self.cast1.pk}),
+                {"logo": data},
+                format="multipart",
+            )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data["logo"].endswith(".jpg"))
+        self.assertIn("logo", response.data["logo"])
+        cast = Cast.objects.get(pk=self.cast1.pk)
+        self.assertTrue(cast.logo.path.endswith(".jpg"))
+        self.assertIn("logo", cast.logo.path)
+        self.assertIn(self.cast1.slug, cast.logo.path)
 
     def test_delete(self):
         """Tests that a manager can delete their casts but not others"""
