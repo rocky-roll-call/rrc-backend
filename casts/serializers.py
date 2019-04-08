@@ -19,7 +19,7 @@ class CastSerializer(ModelSerializer):
             "description",
             "logo",
             "email",
-            "created_date",
+            "created",
             "external_url",
             "facebook_url",
             "twitter_user",
@@ -33,7 +33,7 @@ class CastSerializer(ModelSerializer):
         )
         read_only_fields = (
             "slug",
-            "created_date",
+            "created",
             "managers",
             "members",
             "member_requests",
@@ -50,8 +50,8 @@ class PageSectionSerializer(ModelSerializer):
 
     class Meta:
         model = PageSection
-        fields = ("id", "cast", "title", "text", "order", "created_date")
-        read_only_fields = ("cast", "created_date")
+        fields = ("id", "cast", "title", "text", "order", "created")
+        read_only_fields = ("cast", "created")
 
 
 class CastPhotoSerializer(ModelSerializer):
@@ -61,5 +61,5 @@ class CastPhotoSerializer(ModelSerializer):
 
     class Meta:
         model = CastPhoto
-        fields = ("id", "cast", "image", "description", "created_date")
-        read_only_fields = ("cast", "image", "created_date")
+        fields = ("id", "cast", "image", "description", "created")
+        read_only_fields = ("cast", "image", "created")

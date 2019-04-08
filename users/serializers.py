@@ -96,5 +96,5 @@ class UserPhotoSerializer(ModelSerializer):
 
     class Meta:
         model = UserPhoto
-        fields = ("id", "profile", "image", "description", "created_date")
-        read_only_fields = ("id", "profile", "image", "created_date")
+        fields = ("id", "profile", "image", "description", "created")
+        read_only_fields = ("id", "profile", "image", "created")

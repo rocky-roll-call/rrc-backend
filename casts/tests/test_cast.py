@@ -31,8 +31,8 @@ class CastModelTestCase(TestCase):
     def test_details(self):
         """Check that features were created"""
         self.assertEqual(self.cast.slug, "test-cast")
-        self.assertIsInstance(self.cast.created_date, datetime)
-        self.assertIsInstance(self.cast.modified_date, datetime)
+        self.assertIsInstance(self.cast.created, datetime)
+        self.assertIsInstance(self.cast.modified, datetime)
 
     def _add_check_remove(self, fadd, fcheck, fremv):
         """Runs lifecycle checks on a user"""

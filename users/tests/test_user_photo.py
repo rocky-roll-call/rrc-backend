@@ -46,7 +46,7 @@ class UserPhotoModelTestCase(TestCase):
 
     def test_photo_details(self):
         """Tests image field return types"""
-        self.assertIsInstance(self.photo.created_date, datetime)
+        self.assertIsInstance(self.photo.created, datetime)
         self.assertTrue(self.photo.image.url.endswith(".jpg"))
 
 

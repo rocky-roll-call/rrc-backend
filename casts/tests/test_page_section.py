@@ -30,7 +30,7 @@ class PageSectionModelTestCase(TestCase):
     def test_details(self):
         """Check that features were created"""
         self.assertIsInstance(self.ps1.order, int)
-        self.assertIsInstance(self.ps1.created_date, datetime)
+        self.assertIsInstance(self.ps1.created, datetime)
 
     def test_ordering(self):
         """Tests ordering is preserved when fetching"""

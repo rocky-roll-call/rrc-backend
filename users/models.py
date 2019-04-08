@@ -105,7 +105,7 @@ class UserPhoto(models.Model):
     )
     image = ImageField(upload_to=user_photo)
     description = models.TextField(blank=True)
-    created_date = models.DateTimeField(default=timezone.now, editable=False)
+    created = models.DateTimeField(default=timezone.now, editable=False)
 
     class Meta:
         ordering = ["-pk"]
