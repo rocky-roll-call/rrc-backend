@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "corsheaders",
     # Apps
     "casts",
+    "events",
     "users",
 ]
 

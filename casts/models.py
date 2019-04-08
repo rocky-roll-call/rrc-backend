@@ -2,9 +2,6 @@
 Models to build and manage User profiles and settings
 """
 
-# stdlib
-from datetime import date
-
 # django
 from django.db import models
 from django.utils import text, timezone
@@ -177,7 +174,7 @@ class Cast(models.Model):
         """
         Returns cast events happening today or later
         """
-        return self.events.filter(cast=self, date__gte=date.today())
+        return self.events.filter(cast=self, start__gte=timezone.now())
 
     @property
     def upcoming_events(self) -> ["Event"]:
