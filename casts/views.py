@@ -24,7 +24,7 @@ class CastListCreate(generics.ListCreateAPIView):
     serializer_class = CastSerializer
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
 
-    def perform_create(self, serializer, format=None):
+    def perform_create(self, serializer):
         cast = serializer.save()
         cast.add_member(self.request.user.profile)
         cast.add_manager(self.request.user.profile)
@@ -53,7 +53,7 @@ class ListManageView(views.APIView):
 
     permission_classes = (IsManager,)
 
-    def _run(self, method: str, request, pk: int, pid: int, format=None) -> Response:
+    def _run(self, method: str, request, pk: int, pid: int) -> Response:
         source = get_object_or_404(self.source, pk=pk)
         self.check_object_permissions(request, source)
         member = get_object_or_404(self.member, pk=pid)
@@ -111,7 +111,7 @@ class PageSectionListCreate(generics.ListCreateAPIView):
     def get_queryset(self):
         return PageSection.objects.filter(cast=self.kwargs["pk"])
 
-    def perform_create(self, serializer, format=None):
+    def perform_create(self, serializer):
         cast = Cast.objects.get(pk=self.kwargs["pk"])
         self.check_object_permissions(self.request, cast)
         serializer.save(cast=cast)
@@ -134,7 +134,7 @@ class CastPhotoListCreate(generics.ListCreateAPIView):
     def get_queryset(self):
         return CastPhoto.objects.filter(cast=self.kwargs["pk"])
 
-    def perform_create(self, serializer, format=None):
+    def perform_create(self, serializer):
         cast = Cast.objects.get(pk=self.kwargs["pk"])
         self.check_object_permissions(self.request, cast)
         image = self.request.data.get("image")

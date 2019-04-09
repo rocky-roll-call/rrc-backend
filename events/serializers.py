@@ -1,7 +1,7 @@
 """
 """
 
-from rest_framework.serializers import ModelSerializer
+from rest_framework.serializers import CharField, ModelSerializer
 from .models import Event, Casting
 
 
@@ -20,6 +20,8 @@ class CastingSerializer(ModelSerializer):
     """
     Serializer for the events.Casting model
     """
+
+    role = CharField(source="get_role_display")
 
     class Meta:
         model = Casting

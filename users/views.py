@@ -39,7 +39,7 @@ class UserRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = UserSerializer
     permission_classes = (IsUser,)
 
-    def perform_update(self, serializer, format=None):
+    def perform_update(self, serializer):
         image = self.request.data.get("image")
         if image is not None:
             serializer.save(image=image)
@@ -76,7 +76,7 @@ class UserPhotoListCreate(generics.ListCreateAPIView):
     def get_queryset(self):
         return UserPhoto.objects.filter(profile=self.kwargs["pk"])
 
-    def perform_create(self, serializer, format=None):
+    def perform_create(self, serializer):
         profile = Profile.objects.get(pk=self.kwargs["pk"])
         self.check_object_permissions(self.request, profile)
         if profile.user != self.request.user:

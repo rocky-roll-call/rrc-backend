@@ -10,9 +10,6 @@ from django.db import models
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 
-# library
-from django_enumfield import enum
-
 EXPIRES_AFTER = 365 * 2  # days
 
 
@@ -66,11 +63,14 @@ def get_upcoming_events(days: int = 14, limit: int = 12, cast: int = None) -> di
     return calendar
 
 
-class Role(enum.Enum):
+class Casting(models.Model):
     """
-    Roles performed at an event
+    Represents a User being cast in a role at an Event
     """
 
+    # Character enum values
+    # Ordered by appearance in credits
+    # Room has been left for additional roles by category
     FRANK = 1
     JANET = 2
     BRAD = 3
@@ -90,30 +90,24 @@ class Role(enum.Enum):
     LIGHTS = 31
     PHOTOS = 32
 
-    labels = {
-        FRANK: "Dr. Frank-N-Furter",
-        JANET: "Janet Weiss",
-        BRAD: "Brad Majors",
-        RIFF: "Riff Raff",
-        MAGENTA: "Magenta",
-        COLUMBIA: "Columbia",
-        SCOTT: "Dr. Everett V. Scott",
-        ROCKY: "Rocky Horror",
-        EDDIE: "Eddie",
-        CRIM: "The Criminologist",
-        TRANSY: "Transylvanian",
-        EMCEE: "Emcee",
-        TRIXIE: "Trixie",
-        TECH: "Tech",
-        LIGHTS: "Lights",
-        PHOTOS: "Photographer",
-    }
-
-
-class Casting(models.Model):
-    """
-    Represents a User being cast in a Role at an Event
-    """
+    ROLES = (
+        (FRANK, "Dr. Frank-N-Furter"),
+        (JANET, "Janet Weiss"),
+        (BRAD, "Brad Majors"),
+        (RIFF, "Riff Raff"),
+        (MAGENTA, "Magenta"),
+        (COLUMBIA, "Columbia"),
+        (SCOTT, "Dr. Everett V. Scott"),
+        (ROCKY, "Rocky Horror"),
+        (EDDIE, "Eddie"),
+        (CRIM, "The Criminologist"),
+        (TRANSY, "Transylvanian"),
+        (EMCEE, "Emcee"),
+        (TRIXIE, "Trixie"),
+        (TECH, "Tech"),
+        (LIGHTS, "Lights"),
+        (PHOTOS, "Photographer"),
+    )
 
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="castings")
     profile = models.ForeignKey(
@@ -123,18 +117,11 @@ class Casting(models.Model):
         on_delete=models.CASCADE,
         related_name="castings",
     )
-    role = enum.EnumField(Role)
-    writein = models.CharField(max_length=64, blank=True)
+    role = models.IntegerField(choices=ROLES, null=True)
+    writein = models.CharField(max_length=64, null=True)
 
     class Meta:
         ordering = ["role"]
-
-    @property
-    def role_tag(self) -> Role:
-        """
-        Returns the role as the Role enum
-        """
-        return Role.get(self.role)
 
     @property
     def show_picture(self) -> bool:

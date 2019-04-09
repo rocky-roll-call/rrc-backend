@@ -13,7 +13,7 @@ from rest_framework.test import APIClient
 
 # app
 from casts.models import Cast
-from events.models import Casting, Event, get_upcoming_events
+from events.models import Event, get_upcoming_events
 
 
 class EventModelTestCase(TestCase):
