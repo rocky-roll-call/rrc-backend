@@ -83,19 +83,22 @@ class PageSectionAPITestCase(TestCase):
             {"title": title, "text": text},
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        psection = PageSection.objects.get(id=response.data["id"])
+        psection = PageSection.objects.get(pk=response.data["id"])
         self.assertEqual(psection.title, title)
         self.assertEqual(psection.text, text)
+
+    def test_forbidden_create(self):
+        """Prohibit creating page sections for non-managed casts"""
         response = self.client.post(
             reverse("cast-page-sections", kwargs={"pk": self.cast2.pk}),
-            {"title": title, "text": text},
+            {"title": "test", "text": "test"},
         )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_retrieve(self):
         """Tests page section detail request"""
         response = self.client.get(
-            reverse("cast-page-section", kwargs={"pk": self.ps1.id})
+            reverse("cast-page-section", kwargs={"pk": self.ps1.pk})
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("text", response.data)
@@ -105,30 +108,35 @@ class PageSectionAPITestCase(TestCase):
         self.assertEqual(self.ps1.title, "Test")
         title = "New Test"
         response = self.client.patch(
-            reverse("cast-page-section", kwargs={"pk": self.ps1.id}),
+            reverse("cast-page-section", kwargs={"pk": self.ps1.pk}),
             data={"title": title},
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["title"], title)
-        psection = PageSection.objects.get(id=self.ps1.id)
+        psection = PageSection.objects.get(pk=self.ps1.pk)
         self.assertEqual(psection.title, title)
-        # Prohibit updates to other casts' page sections
+
+    def test_forbidden_update(self):
+        """Prohibit updates to page sections of non-managed casts"""
         response = self.client.patch(
-            reverse("cast-page-section", kwargs={"pk": self.ps2.id})
+            reverse("cast-page-section", kwargs={"pk": self.ps2.pk})
         )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_delete(self):
         """Tests that a manager can delete their page sections but not others"""
         response = self.client.delete(
-            reverse("cast-page-section", kwargs={"pk": self.ps2.id})
-        )
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        response = self.client.delete(
-            reverse("cast-page-section", kwargs={"pk": self.ps1.id})
+            reverse("cast-page-section", kwargs={"pk": self.ps1.pk})
         )
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         response = self.client.delete(
-            reverse("cast-page-section", kwargs={"pk": self.ps1.id})
+            reverse("cast-page-section", kwargs={"pk": self.ps1.pk})
         )
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_forbidden_delete(self):
+        """Tests that a user can't delete a page section of a non-managed cast"""
+        response = self.client.delete(
+            reverse("cast-page-section", kwargs={"pk": self.ps2.pk})
+        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)

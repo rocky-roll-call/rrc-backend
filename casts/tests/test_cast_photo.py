@@ -91,11 +91,14 @@ class CastPhotoAPITestCase(TestCase):
                 format="multipart",
             )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        photo = CastPhoto.objects.get(id=response.data["id"])
+        photo = CastPhoto.objects.get(pk=response.data["id"])
         fname = tmpim.name.split("/")[-1]
         self.assertIn(fname, photo.image.path)
         self.assertIn(self.cast1.slug, photo.image.path)
-        # Prevent non-managers from adding photos
+
+    def test_forbidden_create(self):
+        """Prevent non-managers from adding photos"""
+        tmpim = make_image()
         with open(tmpim.name, "rb") as data:
             response = self.client.post(
                 reverse("cast-photos", kwargs={"pk": self.cast2.pk}),
@@ -106,7 +109,7 @@ class CastPhotoAPITestCase(TestCase):
 
     def test_retrieve(self):
         """Tests photo detail request"""
-        response = self.client.get(reverse("cast-photo", kwargs={"pk": self.photo1.id}))
+        response = self.client.get(reverse("cast-photo", kwargs={"pk": self.photo1.pk}))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("image", response.data)
 
@@ -115,30 +118,35 @@ class CastPhotoAPITestCase(TestCase):
         self.assertEqual(self.photo1.description, "")
         desc = "This is a test"
         response = self.client.patch(
-            reverse("cast-photo", kwargs={"pk": self.photo1.id}),
+            reverse("cast-photo", kwargs={"pk": self.photo1.pk}),
             data={"description": desc},
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["description"], desc)
-        photo = CastPhoto.objects.get(id=self.photo1.id)
+        photo = CastPhoto.objects.get(pk=self.photo1.pk)
         self.assertEqual(photo.description, desc)
-        # Prohibit updates to other casts' photos
+
+    def test_forbidden_update(self):
+        """Prohibit updates to non-managed casts' photos"""
         response = self.client.patch(
-            reverse("cast-photo", kwargs={"pk": self.photo3.id})
+            reverse("cast-photo", kwargs={"pk": self.photo3.pk})
         )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_delete(self):
         """Tests that a manager can delete their cast photos but not others"""
         response = self.client.delete(
-            reverse("cast-photo", kwargs={"pk": self.photo3.id})
-        )
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        response = self.client.delete(
-            reverse("cast-photo", kwargs={"pk": self.photo1.id})
+            reverse("cast-photo", kwargs={"pk": self.photo1.pk})
         )
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         response = self.client.delete(
-            reverse("cast-photo", kwargs={"pk": self.photo1.id})
+            reverse("cast-photo", kwargs={"pk": self.photo1.pk})
         )
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_forbidden_delete(self):
+        """Tests that a user can't delete a photo of a non-managed cast"""
+        response = self.client.delete(
+            reverse("cast-photo", kwargs={"pk": self.photo3.pk})
+        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)

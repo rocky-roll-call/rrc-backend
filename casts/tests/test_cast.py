@@ -180,20 +180,22 @@ class CastAPITestCase(TestCase):
             reverse("casts"), {"name": name, "description": desc, "email": email}
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        cast = Cast.objects.get(id=response.data["id"])
+        cast = Cast.objects.get(pk=response.data["id"])
         self.assertEqual(cast.name, name)
         self.assertEqual(cast.description, desc)
         self.assertEqual(cast.email, email)
         self.assertEqual(cast.slug, "new-cast")
         self.assertTrue(cast.is_member(self.profile))
         self.assertTrue(cast.is_manager(self.profile))
-        # Test unique name
+
+    def test_unique_name(self):
+        """Casts must have a unique name because of the generated url slug"""
         response = self.client.post(reverse("casts"), {"name": self.cast1.name})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_retrieve(self):
         """Tests cast detail request"""
-        response = self.client.get(reverse("cast", kwargs={"pk": self.cast1.id}))
+        response = self.client.get(reverse("cast", kwargs={"pk": self.cast1.pk}))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("name", response.data)
 
@@ -202,16 +204,18 @@ class CastAPITestCase(TestCase):
         self.assertEqual(self.cast1.name, "Test Cast")
         name, slug = "Updated Cast", "updated-cast"
         response = self.client.patch(
-            reverse("cast", kwargs={"pk": self.cast1.id}), data={"name": name}
+            reverse("cast", kwargs={"pk": self.cast1.pk}), data={"name": name}
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["name"], name)
         self.assertEqual(response.data["slug"], slug)
-        cast = Cast.objects.get(id=self.cast1.id)
+        cast = Cast.objects.get(pk=self.cast1.pk)
         self.assertEqual(cast.name, name)
         self.assertEqual(cast.slug, slug)
-        # Prohibit updates to other casts
-        response = self.client.patch(reverse("cast", kwargs={"pk": self.cast2.id}))
+
+    def test_forbidden_update(self):
+        """Prohibit updates to other casts"""
+        response = self.client.patch(reverse("cast", kwargs={"pk": self.cast2.pk}))
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_update_image(self):
@@ -234,7 +238,7 @@ class CastAPITestCase(TestCase):
 
     def test_delete(self):
         """Tests that a manager can delete their casts but not others"""
-        response = self.client.delete(reverse("cast", kwargs={"pk": self.cast2.id}))
+        response = self.client.delete(reverse("cast", kwargs={"pk": self.cast2.pk}))
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         # Delete should fail if the cast has more than one manager
         profile = User.objects.create_user(
@@ -242,12 +246,12 @@ class CastAPITestCase(TestCase):
         ).profile
         self.cast1.add_member(profile)
         self.cast1.add_manager(profile)
-        response = self.client.delete(reverse("cast", kwargs={"pk": self.cast1.id}))
+        response = self.client.delete(reverse("cast", kwargs={"pk": self.cast1.pk}))
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.cast1.remove_manager(profile)
-        response = self.client.delete(reverse("cast", kwargs={"pk": self.cast1.id}))
+        response = self.client.delete(reverse("cast", kwargs={"pk": self.cast1.pk}))
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        response = self.client.delete(reverse("cast", kwargs={"pk": self.cast1.id}))
+        response = self.client.delete(reverse("cast", kwargs={"pk": self.cast1.pk}))
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 
@@ -322,9 +326,9 @@ class CastListAPITestCase(TestCase):
         self._list_add_check_remove("cast-manager", "is_manager")
 
     def test_request_list(self):
-        """"""
+        """Tests member request add/remove endpoint"""
         self._list_add_check_remove("cast-member-request", "has_requested_membership")
 
     def test_blocked_list(self):
-        """"""
+        """Tests blocked user add/remove endpoint"""
         self._list_add_check_remove("cast-blocked", "is_blocked")

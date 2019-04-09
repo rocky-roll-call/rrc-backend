@@ -19,11 +19,11 @@ class UserModelTestCase(TestCase):
     def test_profile_lifecycle(self):
         """Tests that a profile was created/destroyed for the user"""
         self.assertIsNotNone(self.user.profile)
-        pk = self.user.profile.id
-        self.assertIsNotNone(Profile.objects.get(id=pk))
+        pk = self.user.profile.pk
+        self.assertIsNotNone(Profile.objects.get(pk=pk))
         self.user.delete()
         with self.assertRaises(Profile.DoesNotExist):
-            Profile.objects.get(id=pk)
+            Profile.objects.get(pk=pk)
 
 
 class UserAPITestCase(TestCase):
@@ -49,10 +49,10 @@ class UserAPITestCase(TestCase):
     def test_retrieve_auth(self):
         """Tests user-based authentication on the requested object"""
         # User should be able to access its own instance
-        response = self.client.get(reverse("user", kwargs={"pk": self.user1.id}))
+        response = self.client.get(reverse("user", kwargs={"pk": self.user1.pk}))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # But not those of others
-        response = self.client.get(reverse("user", kwargs={"pk": self.user2.id}))
+        response = self.client.get(reverse("user", kwargs={"pk": self.user2.pk}))
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_update(self):
@@ -60,23 +60,28 @@ class UserAPITestCase(TestCase):
         old_email, new_email = "test@test.io", "notatest@test.io"
         self.assertEqual(self.user1.email, old_email)
         response = self.client.patch(
-            reverse("user", kwargs={"pk": self.user1.id}), data={"email": new_email}
+            reverse("user", kwargs={"pk": self.user1.pk}), data={"email": new_email}
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["email"], new_email)
-        user = User.objects.get(id=self.user1.id)
+        user = User.objects.get(pk=self.user1.pk)
         self.assertEqual(user.email, new_email)
-        # Check for unauth when updating other users
+
+    def test_forbidden_update(self):
+        """Prohibit updates to other users' models"""
         response = self.client.patch(
-            reverse("user", kwargs={"pk": self.user2.id}), data={"email": new_email}
+            reverse("user", kwargs={"pk": self.user2.pk}), data={"email": "test"}
         )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_delete(self):
         """Tests that a user can delete their own model but not others"""
-        response = self.client.delete(reverse("user", kwargs={"pk": self.user2.id}))
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        response = self.client.delete(reverse("user", kwargs={"pk": self.user1.id}))
+        response = self.client.delete(reverse("user", kwargs={"pk": self.user1.pk}))
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        response = self.client.delete(reverse("user", kwargs={"pk": self.user1.id}))
+        response = self.client.delete(reverse("user", kwargs={"pk": self.user1.pk}))
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_forbidden_delete(self):
+        """Tests that a user can't delete another user"""
+        response = self.client.delete(reverse("user", kwargs={"pk": self.user2.pk}))
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)

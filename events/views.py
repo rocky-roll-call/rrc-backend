@@ -2,12 +2,14 @@
 Event API Views
 """
 
+# django
+from django.shortcuts import get_object_or_404
+
 # library
 from rest_framework import generics
-from rest_framework.exceptions import ParseError
-from rest_framework.response import Response
 
 # app
+from casts.models import Cast
 from casts.permissions import IsManagerOrReadOnly
 from .models import Event, Casting
 from .serializers import CastingSerializer, EventSerializer
@@ -20,8 +22,10 @@ class EventListCreate(generics.ListCreateAPIView):
     serializer_class = EventSerializer
     permission_classes = (IsManagerOrReadOnly,)
 
-    # def perform_create(self, serializer, format=None):
-    #     pass
+    def perform_create(self, serializer, format=None):
+        cast = get_object_or_404(Cast, pk=self.request.data["cast"])
+        self.check_object_permissions(self.request, cast)
+        serializer.save(cast=cast)
 
 
 class EventRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
@@ -30,6 +34,14 @@ class EventRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
     queryset = Event.objects.all()
     serializer_class = EventSerializer
     permission_classes = (IsManagerOrReadOnly,)
+
+    def perform_update(self, serializer, format=None):
+        if "cast" in self.request.data:
+            cast = get_object_or_404(Cast, pk=self.request.data["cast"])
+            self.check_object_permissions(self.request, cast)
+            serializer.save(cast=cast)
+        else:
+            serializer.save()
 
 
 class CastingListCreate(generics.ListCreateAPIView):

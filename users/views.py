@@ -5,7 +5,7 @@ User API Views
 from django.contrib.auth.models import User
 from rest_framework import generics, permissions
 from rest_framework.exceptions import ParseError, PermissionDenied
-from .permissions import IsOwner, IsOwnerOrReadOnly, IsUser
+from .permissions import IsOwnerOrReadOnly, IsUser
 from .models import Profile, UserPhoto
 from .serializers import (
     ProfileSerializer,
@@ -62,7 +62,7 @@ class ProfileRetrieveUpdate(generics.RetrieveUpdateAPIView):
     permission_classes = (IsOwnerOrReadOnly,)
 
     def get_serializer_class(self):
-        if self.kwargs["pk"] == self.request.user.profile.id:
+        if self.kwargs["pk"] == self.request.user.profile.pk:
             return ProfileSerializer
         return PublicProfileSerializer
 

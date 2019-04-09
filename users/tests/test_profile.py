@@ -64,11 +64,11 @@ class ProfileAPITestCase(TestCase):
     def test_retrieve(self):
         """Tests user-based authentication on the requested object"""
         # User should have full access its own profile
-        response = self.client.get(reverse("profile", kwargs={"pk": self.profile1.id}))
+        response = self.client.get(reverse("profile", kwargs={"pk": self.profile1.pk}))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("show_email", response.data)
         # But a limitted view of others
-        response = self.client.get(reverse("profile", kwargs={"pk": self.profile2.id}))
+        response = self.client.get(reverse("profile", kwargs={"pk": self.profile2.pk}))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertNotIn("show_email", response.data)
 
@@ -77,15 +77,17 @@ class ProfileAPITestCase(TestCase):
         self.assertEqual(self.profile1.bio, "")
         bio = "This is a test"
         response = self.client.patch(
-            reverse("profile", kwargs={"pk": self.profile1.id}), data={"bio": bio}
+            reverse("profile", kwargs={"pk": self.profile1.pk}), data={"bio": bio}
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["bio"], bio)
-        profile = Profile.objects.get(id=self.profile1.id)
+        profile = Profile.objects.get(pk=self.profile1.pk)
         self.assertEqual(profile.bio, bio)
-        # Check for unauth when updating other profiles
+
+    def test_forbidden_update(self):
+        """Prohibit updates to other users' profiles"""
         response = self.client.patch(
-            reverse("profile", kwargs={"pk": self.profile2.id}), data={"bio": bio}
+            reverse("profile", kwargs={"pk": self.profile2.pk}), data={"bio": "test"}
         )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 

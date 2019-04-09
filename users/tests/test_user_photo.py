@@ -97,15 +97,26 @@ class UserPhotoAPITestCase(TestCase):
                 format="multipart",
             )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        photo = UserPhoto.objects.get(id=response.data["id"])
+        photo = UserPhoto.objects.get(pk=response.data["id"])
         fname = tmpim.name.split("/")[-1]
         self.assertIn(fname, photo.image.path)
         self.assertIn(self.profile1.user.username, photo.image.path)
 
+    def test_forbidden_create(self):
+        """Prohibit creating photos for other users"""
+        tmpim = make_image()
+        with open(tmpim.name, "rb") as data:
+            response = self.client.post(
+                reverse("profile-photos", kwargs={"pk": self.profile2.pk}),
+                {"image": data, "description": "Test Image"},
+                format="multipart",
+            )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
     def test_retrieve(self):
         """Tests photo detail request"""
         response = self.client.get(
-            reverse("profile-photo", kwargs={"pk": self.photo1.id})
+            reverse("profile-photo", kwargs={"pk": self.photo1.pk})
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("image", response.data)
@@ -115,30 +126,35 @@ class UserPhotoAPITestCase(TestCase):
         self.assertEqual(self.photo1.description, "")
         desc = "This is a test"
         response = self.client.patch(
-            reverse("profile-photo", kwargs={"pk": self.photo1.id}),
+            reverse("profile-photo", kwargs={"pk": self.photo1.pk}),
             data={"description": desc},
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["description"], desc)
-        photo = UserPhoto.objects.get(id=self.photo1.id)
+        photo = UserPhoto.objects.get(pk=self.photo1.pk)
         self.assertEqual(photo.description, desc)
-        # Prohibit updates to other users' photos
+
+    def test_forbidden_update(self):
+        """Prohibit updates to other users' photos"""
         response = self.client.patch(
-            reverse("profile-photo", kwargs={"pk": self.photo2.id})
+            reverse("profile-photo", kwargs={"pk": self.photo2.pk})
         )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_delete(self):
         """Tests that a user can delete their own photos but not others"""
         response = self.client.delete(
-            reverse("profile-photo", kwargs={"pk": self.photo2.id})
-        )
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        response = self.client.delete(
-            reverse("profile-photo", kwargs={"pk": self.photo1.id})
+            reverse("profile-photo", kwargs={"pk": self.photo1.pk})
         )
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         response = self.client.delete(
-            reverse("profile-photo", kwargs={"pk": self.photo1.id})
+            reverse("profile-photo", kwargs={"pk": self.photo1.pk})
         )
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_forbidden_delete(self):
+        """Tests that a user can't delete a photo of another user"""
+        response = self.client.delete(
+            reverse("profile-photo", kwargs={"pk": self.photo2.pk})
+        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
