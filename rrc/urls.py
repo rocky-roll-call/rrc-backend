@@ -19,10 +19,16 @@ from django.conf.urls import include
 
 from rest_framework_jwt.views import obtain_jwt_token
 
+# app
+from casts.views import CastListCreate
+from events.views import EventListCreate
+
 urlpatterns = [
     path("admin", admin.site.urls),
     path("auth", obtain_jwt_token),
-    path("users", include("users.urls")),
-    path("casts", include("casts.urls")),
-    path("events", include("events.urls")),
+    path("users/", include("users.urls")),
+    path("casts", CastListCreate.as_view(), name="casts"),
+    path("casts/", include("casts.urls")),
+    path("events", EventListCreate.as_view(), name="events"),
+    path("events/", include("events.urls")),
 ]

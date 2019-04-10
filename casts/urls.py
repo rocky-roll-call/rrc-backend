@@ -1,6 +1,5 @@
 from django.urls import path
 from .views import (
-    CastListCreate,
     CastRetrieveUpdateDestroy,
     CastMemberManager,
     CastManagerManager,
@@ -13,7 +12,6 @@ from .views import (
 )
 
 urlpatterns = [
-    path("", CastListCreate.as_view(), name="casts"),
     path("<int:pk>", CastRetrieveUpdateDestroy.as_view(), name="cast"),
     path("<int:pk>/members/<int:pid>", CastMemberManager.as_view(), name="cast-member"),
     path(

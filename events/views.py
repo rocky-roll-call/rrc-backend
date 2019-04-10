@@ -7,7 +7,7 @@ from django.shortcuts import get_object_or_404
 
 # library
 from rest_framework import generics
-from rest_framework.serializers import ValidationError
+from rest_framework.exceptions import ValidationError
 
 # app
 from casts.models import Cast
@@ -55,7 +55,7 @@ class CastingListCreate(generics.ListCreateAPIView):
         return Casting.objects.filter(event=self.kwargs["pk"])
 
     def perform_create(self, serializer):
-        event = get_object_or_404(Event, pk=self.request.data["event"])
+        event = get_object_or_404(Event, pk=self.kwargs["pk"])
         self.check_object_permissions(self.request, event)
         if "profile" in self.request.data:
             profile = get_object_or_404(Profile, pk=self.request.data["profile"])

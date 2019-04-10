@@ -117,11 +117,18 @@ class Casting(models.Model):
         on_delete=models.CASCADE,
         related_name="castings",
     )
-    role = models.IntegerField(choices=ROLES, null=True)
-    writein = models.CharField(max_length=64, null=True)
+    role = models.IntegerField(choices=ROLES)
+    writein = models.CharField(max_length=64, blank=True, null=True)
 
     class Meta:
         ordering = ["role"]
+
+    @property
+    def role_name(self) -> str:
+        """
+        Returns the role's display name
+        """
+        return self.get_role_display()
 
     @property
     def show_picture(self) -> bool:
@@ -140,3 +147,7 @@ class Casting(models.Model):
             raise ValidationError(
                 "Casting can't have both a profile and a write-in value"
             )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
