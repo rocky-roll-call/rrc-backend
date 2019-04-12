@@ -7,7 +7,7 @@ from datetime import timedelta
 
 # django
 from django.db import models
-from django.core.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError
 from django.utils import timezone
 
 EXPIRES_AFTER = 365 * 2  # days

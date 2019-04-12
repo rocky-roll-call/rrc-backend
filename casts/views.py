@@ -7,7 +7,7 @@ from django.shortcuts import get_object_or_404
 
 # library
 from rest_framework import generics, permissions, views
-from rest_framework.exceptions import ParseError
+from rest_framework.exceptions import ParseError, ValidationError
 from rest_framework.response import Response
 
 # app
@@ -39,7 +39,7 @@ class CastRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
 
     def perform_destroy(self, instance: Cast):
         if instance.managers.count() > 1:
-            raise ParseError("User must be the sole manager to delete")
+            raise ValidationError("User must be the sole manager to delete")
         instance.delete()
 
 

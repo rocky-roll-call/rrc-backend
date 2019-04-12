@@ -3,13 +3,13 @@ from datetime import timedelta
 
 # django
 from django.contrib.auth.models import User
-from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
 # library
 from rest_framework import status
+from rest_framework.exceptions import ValidationError
 from rest_framework.test import APIClient
 
 # app
@@ -17,7 +17,7 @@ from casts.models import Cast
 from events.models import Casting, Event
 
 
-class CastingModelTestCase(TestCase):
+class TestCastingModelTestCase(TestCase):
     """
     Tests the Casting model directly
     """
@@ -72,7 +72,7 @@ class CastingModelTestCase(TestCase):
         self.assertEqual(castings, [self.casting2, self.casting1])
 
     def test_bad_init(self):
-        """"""
+        """Tests error raised when giving bad profile and writein values"""
         with self.assertRaises(ValidationError):
             Casting.objects.create(event=self.event, role=Casting.FRANK)
         with self.assertRaises(ValidationError):
@@ -129,10 +129,12 @@ class CastingAPITestCase(TestCase):
         self.client = APIClient()
         self.client.force_authenticate(user=user)
 
-    # def test_options(self):
-    #     """"""
-    #     response = self.client.options(reverse("castings", kwargs={"pk": self.event1.pk}))
-    #     print(response.data)
+    def test_options(self):
+        """Tests choice info found in options method"""
+        response = self.client.options(
+            reverse("castings", kwargs={"pk": self.event1.pk})
+        )
+        self.assertIn("choices", response.data["actions"]["POST"]["role"])
 
     def test_list(self):
         """Tests calling casting list"""
@@ -170,3 +172,40 @@ class CastingAPITestCase(TestCase):
         self.assertEqual(casting.role_name, "Emcee")
         self.assertFalse(casting.show_picture)
         self.assertEqual(casting.writein, name)
+
+    def test_bad_create(self):
+        """Tests fail response when giving bad data"""
+        # No profile or write-in
+        response = self.client.post(
+            reverse("castings", kwargs={"pk": self.event1.pk}), {"role": Casting.EMCEE}
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        # Both profile and write-in
+        response = self.client.post(
+            reverse("castings", kwargs={"pk": self.event1.pk}),
+            {"profile": self.profile1.pk, "role": Casting.FRANK, "writein": "test"},
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        # Profile not a member
+        response = self.client.post(
+            reverse("castings", kwargs={"pk": self.event1.pk}),
+            {"profile": self.profile2.pk, "role": Casting.FRANK},
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_forbidden_create(self):
+        """Prohibit creating castings for events on non-managed casts"""
+        response = self.client.post(
+            reverse("castings", kwargs={"pk": self.event2.pk}),
+            {"profile": self.profile1.pk, "role": Casting.FRANK},
+        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_retrieve(self):
+        """Tests casting detail request"""
+        response = self.client.get(reverse("casting", kwargs={"pk": self.casting2.pk}))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("role", response.data)
+        self.assertIsInstance(response.data["role"], int)
+        self.assertEqual(response.data["role_name"], "Dr. Frank-N-Furter")
+        self.assertTrue(response.data["show_picture"])
