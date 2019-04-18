@@ -2,6 +2,7 @@
 """
 
 from rest_framework.serializers import ModelSerializer
+from events.serializers import EventSerializer
 from .models import Cast, CastPhoto, PageSection
 
 
@@ -9,6 +10,8 @@ class CastSerializer(ModelSerializer):
     """
     Serializer for the casts.Cast model
     """
+
+    upcoming_events = EventSerializer(many=True, read_only=True)
 
     class Meta:
         model = Cast
@@ -28,7 +31,7 @@ class CastSerializer(ModelSerializer):
             "members",
             "member_requests",
             "blocked",
-            "future_events",
+            # "future_events",
             "upcoming_events",
         )
         read_only_fields = (
@@ -38,7 +41,7 @@ class CastSerializer(ModelSerializer):
             "members",
             "member_requests",
             "blocked",
-            "future_events",
+            # "future_events",
             "upcoming_events",
         )
 

@@ -209,3 +209,40 @@ class CastingAPITestCase(TestCase):
         self.assertIsInstance(response.data["role"], int)
         self.assertEqual(response.data["role_name"], "Dr. Frank-N-Furter")
         self.assertTrue(response.data["show_picture"])
+
+    def test_update(self):
+        """"Tests updating casting details"""
+        self.assertEqual(self.casting1.role, Casting.EMCEE)
+        role = Casting.RIFF
+        response = self.client.patch(
+            reverse("casting", kwargs={"pk": self.casting1.pk}), data={"role": role}
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["role"], role)
+        casting = Casting.objects.get(pk=self.casting1.pk)
+        self.assertEqual(casting.role, role)
+
+    def test_forbidden_update(self):
+        """Prohibit updates to other cast events"""
+        response = self.client.patch(
+            reverse("casting", kwargs={"pk": self.casting3.pk})
+        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_delete(self):
+        """Tests that a cast manager can delete castings"""
+        response = self.client.delete(
+            reverse("casting", kwargs={"pk": self.casting1.pk})
+        )
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        response = self.client.delete(
+            reverse("casting", kwargs={"pk": self.casting1.pk})
+        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_forbidden_delete(self):
+        """Tests that a user can't delete a casting of a non-managed cast"""
+        response = self.client.delete(
+            reverse("casting", kwargs={"pk": self.casting3.pk})
+        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)

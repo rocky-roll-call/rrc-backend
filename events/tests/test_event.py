@@ -125,6 +125,14 @@ class EventAPITestCase(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 3)
 
+    def test_embedded_event(self):
+        """Tests that embedded events are expanded and not just an ID"""
+        response = self.client.get(reverse("cast", kwargs={"pk": self.cast1.pk}))
+        events = response.data["upcoming_events"]
+        self.assertEqual(len(events), 1)
+        self.assertEqual(events[0]["id"], self.event1.pk)
+        self.assertEqual(events[0]["name"], self.event1.name)
+
     def test_create(self):
         """Tests creating a new event"""
         name, desc, venue = "New Event", "A new event", "A new place"
@@ -172,7 +180,7 @@ class EventAPITestCase(TestCase):
         self.assertEqual(self.event1.name, "Test Event")
         name = "Updated Event"
         response = self.client.patch(
-            reverse("cast", kwargs={"pk": self.cast1.pk}), data={"name": name}
+            reverse("event", kwargs={"pk": self.event1.pk}), data={"name": name}
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["name"], name)
