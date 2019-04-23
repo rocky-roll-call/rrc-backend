@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     # Apps
     "casts",
     "events",
+    # "login",
     "users",
 ]
 
@@ -162,3 +163,6 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.1/howto/static-files/
 
 STATIC_URL = "/static/"
+
+FACEBOOK_APP_ID = config("FACEBOOK_APP_ID")
+FACEBOOK_APP_SECRET = config("FACEBOOK_APP_SECRET")

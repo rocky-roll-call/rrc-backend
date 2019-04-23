@@ -9,3 +9,4 @@ dj-database-url~=0.5
 pillow~=6.0
 python-decouple~=3.1
 sorl-thumbnail~=12.5
+voluptuous~=0.11

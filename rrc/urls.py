@@ -31,4 +31,5 @@ urlpatterns = [
     path("casts/", include("casts.urls")),
     path("events", EventListCreate.as_view(), name="events"),
     path("events/", include("events.urls")),
+    # path("login/", include("login.urls")),
 ]

@@ -43,6 +43,9 @@ class Profile(models.Model):
 
     user = models.OneToOneField(User, on_delete=models.CASCADE)
 
+    # Login IDs
+    facebook_id = models.CharField(max_length=200, blank=True, unique=True)
+
     # Public Profile
     image = ImageField(blank=True, upload_to=profile_image)
     name = models.CharField(max_length=128, blank=True)
