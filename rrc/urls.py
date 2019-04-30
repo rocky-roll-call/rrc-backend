@@ -17,7 +17,7 @@ from django.contrib import admin
 from django.urls import path
 from django.conf.urls import include
 
-from rest_framework_jwt.views import obtain_jwt_token
+# from rest_framework_jwt.views import obtain_jwt_token
 
 # app
 from casts.views import CastListCreate
@@ -25,11 +25,13 @@ from events.views import EventListCreate
 
 urlpatterns = [
     path("admin", admin.site.urls),
-    path("auth", obtain_jwt_token),
+    # path("auth", obtain_jwt_token),
+    path("auth/", include("rest_auth.urls")),
+    path("auth/registration/", include("rest_auth.registration.urls")),
+    # path("auth/social/", include("login.urls")),
     path("users/", include("users.urls")),
     path("casts", CastListCreate.as_view(), name="casts"),
     path("casts/", include("casts.urls")),
     path("events", EventListCreate.as_view(), name="events"),
     path("events/", include("events.urls")),
-    # path("login/", include("login.urls")),
 ]
