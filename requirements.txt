@@ -1,13 +1,19 @@
-django~=2.2
-django-cleanup~=3.2
-django-cors-headers~=2.5
-django-enumfield~=1.5
+django~=3.0
+django-cleanup~=4.0
+django-cors-headers~=3.2
+django-enumfield~=2.0
 django-rest-auth[with_social]~=0.9
-django-storages~=1.7
-djangorestframework~=3.9
+django-storages~=1.8
+djangorestframework~=3.11
 djangorestframework-jwt~=1.11
 dj-database-url~=0.5
-pillow~=6.0
-python-decouple~=3.1
-sorl-thumbnail~=12.5
+pillow~=6.2
+python-decouple~=3.3
+# Django 3.0 support
+# sorl-thumbnail~=12.5
+git+git://github.com/jazzband/sorl-thumbnail.git@4fe1854ee30e24adfc57884342517bbf506d0cd9#egg=sorl-thumbnail
 voluptuous~=0.11
+
+# Dev
+# pylint-django~=2.0.13
+# python-dotenv~=0.10

@@ -53,7 +53,7 @@ INSTALLED_APPS = [
     "allauth.account",
     "rest_auth",
     "rest_auth.registration",
-    # "allauth.socialaccount",
+    "allauth.socialaccount",
     # "allauth.socialaccount.providers.facebook",
     # "allauth.socialaccount.providers.twitter",
     # Apps
@@ -103,7 +103,7 @@ JWT_AUTH = {
     "JWT_REFRESH_EXPIRATION_DELTA": datetime.timedelta(days=7),
 }
 
-CORS_ORIGIN_WHITELIST = ("localhost:8080", "localhost")
+CORS_ORIGIN_WHITELIST = ("http://localhost:8080", "http://localhost")
 
 # Enable S3 asset storage or use local /media folder
 
