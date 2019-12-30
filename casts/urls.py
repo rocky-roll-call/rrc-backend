@@ -1,6 +1,7 @@
 from django.urls import path
 from .views import (
     CastRetrieveUpdateDestroy,
+    CastSlugRetrieveUpdateDestroy,
     CastMemberManager,
     CastManagerManager,
     CastMemberRequestManager,
@@ -13,6 +14,7 @@ from .views import (
 
 urlpatterns = [
     path("<int:pk>", CastRetrieveUpdateDestroy.as_view(), name="cast"),
+    path("<slug>", CastSlugRetrieveUpdateDestroy.as_view(), name="cast-slug"),
     path("<int:pk>/members/<int:pid>", CastMemberManager.as_view(), name="cast-member"),
     path(
         "<int:pk>/managers/<int:pid>", CastManagerManager.as_view(), name="cast-manager"

@@ -43,6 +43,12 @@ class CastRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
         instance.delete()
 
 
+class CastSlugRetrieveUpdateDestroy(CastRetrieveUpdateDestroy):
+    """Retrieve, update, or delete a cast by slug"""
+
+    lookup_field = "slug"
+
+
 class ListManageView(views.APIView):
     """Add and remove objects from a list"""
 

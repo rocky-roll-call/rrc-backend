@@ -10,12 +10,11 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/2.1/ref/settings/
 """
 
-import os
 import datetime
+from pathlib import Path
 from decouple import config
 
-# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = Path(__file__, "../..").resolve()
 
 
 # Quick-start development settings - unsuitable for production
@@ -116,7 +115,7 @@ if config("ENABLE_S3_ASSETS", default=False, cast=bool):
     AWS_DEFAULT_ACL = None
 else:
     MEDIA_URL = "/media/"
-    MEDIA_ROOT = os.path.join(BASE_DIR, "media/")
+    MEDIA_ROOT = BASE_DIR / "media"
 
 ROOT_URLCONF = "rrc.urls"
 
@@ -145,7 +144,7 @@ WSGI_APPLICATION = "rrc.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
+        "NAME": str(BASE_DIR / "db.sqlite3"),
     }
 }
 
